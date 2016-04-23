@@ -1,0 +1,35 @@
+{
+  "options": {
+    "directed": true,
+    "multigraph": false,
+    "compound": true
+  },
+  "nodes": [
+    {
+      "v": "in",
+      "value": {
+        "id": "io/stdin",
+        "version": "0.2.0",
+        "name": "in"
+      }
+    },
+    {
+      "v": "out",
+      "value": {
+        "id": "io/stdout",
+        "version": "0.2.0",
+        "name": "out"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "v":"in",
+      "w":"out",
+      "value":{
+        "outPort":"output",
+        "inPort":"input"
+      }
+    }
+  ]
+}
