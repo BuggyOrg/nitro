@@ -6,8 +6,8 @@
   },
   "nodes": [
     {
-      "v": "const1",
-      "value": {"meta": "math/const1", "version": "0.2.0", "name": "const1"}
+      "v": "const",
+      "value": {"meta": "math/const", "version": "0.2.0", "name": "const", "params": {"value": 1}}
     },
     {
       "v": "inc",
@@ -24,7 +24,7 @@
   ],
   "edges": [
     {
-      "v": "const1",
+      "v": "const",
       "w": "inc",
       "value": {
         "outPort": "output",
