@@ -10,31 +10,33 @@ const knownNonConstants = {
   'io/stdin': true
 }
 
-function deepWalkBack (graph, node, parent = null, depth = 0) {
-  // TODO this function shouldn't return the entire graph but only walk one step back
-
-  const prefix = Array(depth + 1).join('-')
+function deepWalkBack (graph, node, parent = null) {
   let nodeValue = graph.node(node)
-  console.log(`${prefix}> deep walk back from ${node} (${nodeValue.atomic ? 'atomic' : 'non-atomic'})`)
 
   if (nodeValue.atomic) {
     let predecessors = _.flatten(Object.keys(nodeValue.inputPorts || {}).map(port => walk.predecessor(graph, node, port)))
-                        // .filter(n => n !== parent)
-    return {
-      node: node,
-      predecessors: _.flatten(predecessors.map(p => {
-        if (p === parent) {
-          return _.flatten(Object.keys(graph.node(p).inputPorts || {}).map(port => walk.predecessor(graph, p, port))).map(n => deepWalkBack(graph, n, null, depth + 1))
-        } else {
-          return deepWalkBack(graph, p, depth + 1)
-        }
-      }))
-    }
+
+    return _.flatten(predecessors.map(p => {
+      if (p === parent) {
+        return _.flatten(Object.keys(graph.node(p).inputPorts || {}).map(port => walk.predecessor(graph, p, port)))
+                .map(p => { return { node: p, successor: node } })
+      } else {
+        return { node: p, successor: node }
+      }
+    }))
   } else {
     let predecessors = _.flatten(Object.keys(nodeValue.outputPorts || {}).map(port => walk.predecessorOutPort(graph, node, port)))
                         .map(n => n.node)
                         .filter(n => n !== parent)
-    return predecessors.map(p => deepWalkBack(graph, p, node, depth + 1))
+    return predecessors.map(p => { return { node: p, successor: node } })
+  }
+}
+
+function deepPrintBack (graph, node) {
+  let predecessors = deepWalkBack(graph, node)
+  while (predecessors.length > 0) {
+    console.log(JSON.stringify(predecessors))
+    predecessors = _.flatten(predecessors.map(p => deepWalkBack(graph, p.node, p.successor)))
   }
 }
 
@@ -56,9 +58,10 @@ function isConstantCompound (compoundNode, graph, node, port) {
 }
 
 export function isConstant (graph, node) {
+  graph.sinks().forEach(v => deepPrintBack(graph, v))
+
   if (node == null) {
     // a graph is constant if every node that has no successor is constant
-    console.log(JSON.stringify(deepWalkBack(graph, graph.sinks()[0])))
     return graph.sinks().every(v => isConstant(graph, v))
   } else {
     // a node is constant if it is a 'known constant' or if every predecessor is constant
