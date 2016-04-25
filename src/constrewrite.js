@@ -59,11 +59,12 @@ function tryEvaluate (graph, node) {
   if (evaluator != null) {
     return evaluator(graph, node)
   } else {
-    return false
+    throw new Error(`${node} can't be evaluated statically`)
   }
 }
 
 function createConstantNode (constant) {
+  // TODO create boolean, string and object constants
   if (_.isNumber(constant)) {
     return {
       id: 'math/const',
