@@ -9,6 +9,15 @@ const knownNonConstants = {
   'io/stdin': true
 }
 
+const evaluateToConstant = {
+  'math/const': (graph, node) => graph.node(node).params.value,
+  'math/add': (graph, node) => {
+    let parent = graph.node(node).parent
+    let predecessors = deepWalkBack(graph, node, parent)
+    return tryEvaluate(graph, predecessors[0].node) + tryEvaluate(graph, predecessors[0].node)
+  }
+}
+
 function deepWalkBack (graph, node, parent = null) {
   let nodeValue = graph.node(node)
 
@@ -35,17 +44,47 @@ function deepWalkBack (graph, node, parent = null) {
   }
 }
 
-/*
 function deepPrintBack (graph, node) {
   let predecessors = deepWalkBack(graph, node)
   while (predecessors.length > 0) {
-    console.log(JSON.stringify(predecessors))
+    console.log(JSON.stringify(predecessors.map(p => graph.node(p.node).id)))
     predecessors = _.flatten(predecessors.map(p => deepWalkBack(graph, p.node, p.successor)))
   }
 }
-*/
+
+function tryEvaluate (graph, node) {
+  let nodeValue = graph.node(node)
+  console.log(nodeValue)
+  let evaluator = evaluateToConstant[nodeValue.id]
+  if (evaluator != null) {
+    return evaluator(graph, node)
+  } else {
+    return false
+  }
+}
+
+function createConstantNode (constant) {
+  if (_.isNumber(constant)) {
+    return {
+      id: 'math/const',
+      version: '0.2.0',
+      inputPorts: {},
+      outputPorts: { output: 'number' },
+      atomic: true,
+      path: [],
+      params: { value: constant },
+      branchPath: 'const',
+      branch: 'const',
+      name: 'const'
+    }
+  } else {
+    throw new Error('cannot create constant node for ' + constant)
+  }
+}
 
 export function isConstant (graph, node, parent = null) {
+  graph.sinks().forEach(v => deepPrintBack(graph, v))
+
   if (node == null) {
     // a graph is constant if every node that has no successor is constant
     return graph.sinks().every(v => isConstant(graph, v))
@@ -59,7 +98,15 @@ export function isConstant (graph, node, parent = null) {
       console.log(`- ${nodeValue.id} is a known non-constant`)
       return false
     } else {
-      return deepWalkBack(graph, node, parent).every(v => isConstant(graph, v.node, v.successor))
+      let constant = deepWalkBack(graph, node, parent).every(v => isConstant(graph, v.node, v.successor))
+      if (constant) {
+        const constantNode = createConstantNode(tryEvaluate(graph, node))
+        constantNode.branchPath = nodeValue.branchPath
+        constantNode.branch = nodeValue.branch
+        constantNode.name = `${node}-rewritten-to-const`
+        console.log(`${node} is constant and could be rewritten to ${JSON.stringify(constantNode)}`)
+      }
+      return constant
     }
   }
 }
