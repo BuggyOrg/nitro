@@ -1,6 +1,5 @@
-
 import _ from 'lodash'
-import {walk} from '@buggyorg/graphtools'
+import { walk } from '@buggyorg/graphtools'
 
 const knownConstants = {
   'math/const': (graph, node) => graph.node(node).params.value
@@ -19,16 +18,20 @@ function deepWalkBack (graph, node, parent = null) {
     return _.flatten(predecessors.map(p => {
       if (p === parent) {
         return _.flatten(Object.keys(graph.node(p).inputPorts || {}).map(port => walk.predecessor(graph, p, port)))
-                .map(p => { return { node: p, successor: node } })
+          .map(p => {
+            return { node: p, successor: node }
+          })
       } else {
         return { node: p, successor: node }
       }
     }))
   } else {
     let predecessors = _.flatten(Object.keys(nodeValue.outputPorts || {}).map(port => walk.predecessorOutPort(graph, node, port)))
-                        .map(n => n.node)
-                        .filter(n => n !== parent)
-    return predecessors.map(p => { return { node: p, successor: node } })
+      .map(n => n.node)
+      .filter(n => n !== parent)
+    return predecessors.map(p => {
+      return { node: p, successor: node }
+    })
   }
 }
 
