@@ -32,6 +32,7 @@ function deepWalkBack (graph, node, parent = null) {
   }
 }
 
+/*
 function deepPrintBack (graph, node) {
   let predecessors = deepWalkBack(graph, node)
   while (predecessors.length > 0) {
@@ -39,27 +40,9 @@ function deepPrintBack (graph, node) {
     predecessors = _.flatten(predecessors.map(p => deepWalkBack(graph, p.node, p.successor)))
   }
 }
+*/
 
-function isConstantCompound (compoundNode, graph, node, port) {
-  let nodeValue = graph.node(node)
-  if (nodeValue.atomic) {
-    let predecessors = _.flatten(Object.keys(nodeValue.inputPorts || {}).map(port => walk.predecessor(graph, node, port)))
-                        .filter(n => n !== compoundNode)
-    return predecessors.every(n => isConstantCompound(compoundNode, graph, n))
-  } else {
-    console.log(`${node} is not atomic`)
-    console.log(walk.predecessorOutPort(graph, node, port))
-
-    let predecessors = _.flatten(Object.keys(nodeValue.inputPorts || {}).map(port => walk.predecessorOutPort(graph, node, port)))
-                        .map(n => n.node)
-                        .filter(n => n !== compoundNode)
-    return predecessors.every(n => isConstantCompound(graph, n))
-  }
-}
-
-export function isConstant (graph, node) {
-  graph.sinks().forEach(v => deepPrintBack(graph, v))
-
+export function isConstant (graph, node, parent = null) {
   if (node == null) {
     // a graph is constant if every node that has no successor is constant
     return graph.sinks().every(v => isConstant(graph, v))
@@ -67,30 +50,13 @@ export function isConstant (graph, node) {
     // a node is constant if it is a 'known constant' or if every predecessor is constant
     let nodeValue = graph.node(node)
     if (knownConstants[nodeValue.id] != null) {
-      // console.log(`- ${nodeValue.id} is a known constant!`)
+      console.log(`- ${nodeValue.id} is a known constant!`)
       return true
     } else if (knownNonConstants[nodeValue.id] != null) {
-      // console.log(`- ${nodeValue.id} is a known non-constant`)
+      console.log(`- ${nodeValue.id} is a known non-constant`)
       return false
     } else {
-      if (!nodeValue.atomic) {
-        console.log(`${node} is not atomic`)
-        // let predecessors = _.flatten(Object.keys(nodeValue.outputPorts || {}).map(port => walk.predecessorOutPort(graph, node, port)))
-        // console.log(predecessors)
-        // return predecessors.every(v => isConstantCompound(node, graph, v.node, v.port))
-        return isConstantCompound(graph, node)
-      } else {
-        let predecessors = _.flatten(Object.keys(nodeValue.inputPorts || {}).map(port => walk.predecessor(graph, node, port)))
-
-        console.log(`predecessors of ${node}: ${JSON.stringify(predecessors)}`)
-        if (predecessors.every(v => isConstant(graph, v))) {
-          // console.log(`- ${nodeValue.id} is constant!`)
-          return true
-        } else {
-          // console.log(`- ${nodeValue.id} is not constant`)
-          return false
-        }
-      }
+      return deepWalkBack(graph, node, parent).every(v => isConstant(graph, v.node, v.successor))
     }
   }
 }
