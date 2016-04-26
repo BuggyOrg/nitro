@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import graphlib from 'graphlib'
 import { walk } from '@buggyorg/graphtools'
 
 const knownConstants = {
@@ -104,10 +105,20 @@ export function isConstant (graph, node, parent = null) {
         const constantNode = createConstantNode(tryEvaluate(graph, node))
         constantNode.branchPath = nodeValue.branchPath
         constantNode.branch = nodeValue.branch
-        constantNode.name = `${node}-rewritten-to-const`
-        console.log(`${node} is constant and could be rewritten to ${JSON.stringify(constantNode)}`)
+        constantNode.name = nodeValue.name + '-rewritten'
+
+        // rewrite the node
+        graph.setNode(node, constantNode)
+        graph.nodeEdges(node).filter(e => e.v === node).forEach(e => graph.edge(e).outPort = Object.keys(constantNode.outputPorts)[0])
+        graph.nodeEdges(node).filter(e => e.w === node).forEach(e => graph.removeEdge(e))
+
+        console.log(`${node} is constant and was rewritten to ${JSON.stringify(constantNode)}`)
+        console.log(JSON.stringify(graphlib.json.write(graph)))
+
+        return deepWalkBack(graph, node, parent).every(v => isConstant(graph, v.node, v.successor))
+      } else {
+        return false
       }
-      return constant
     }
   }
 }
