@@ -108,11 +108,16 @@ export function isConstant (graph, node, parent = null) {
         constantNode.name = nodeValue.name + '-rewritten'
 
         // rewrite the node
+        let deletePredecessors = (graph, node, parent) => deepWalkBack(graph, node, parent).forEach(n => {
+          deletePredecessors(graph, n.node, node)
+          graph.removeNode(n.node)
+        })
+        deletePredecessors(graph, node, parent)
         graph.setNode(node, constantNode)
-        graph.nodeEdges(node).filter(e => e.v === node).forEach(e => graph.edge(e).outPort = Object.keys(constantNode.outputPorts)[0])
-        graph.nodeEdges(node).filter(e => e.w === node).forEach(e => graph.removeEdge(e))
 
         console.log(`${node} is constant and was rewritten to ${JSON.stringify(constantNode)}`)
+        // const fs = require('fs')
+        // fs.writeFileSync('test.json', JSON.stringify(graphlib.json.write(graph)))
         console.log(JSON.stringify(graphlib.json.write(graph)))
 
         return deepWalkBack(graph, node, parent).every(v => isConstant(graph, v.node, v.successor))
