@@ -32,5 +32,3 @@ describe('constant branch replacer', () => {
     expect(graphlib.json.write(graph)).to.deep.equal(originalGraph)
   })
 })
-// const fs = require('fs')
-// fs.writeFileSync('test.json', JSON.stringify(graphlib.json.write(graph)))
