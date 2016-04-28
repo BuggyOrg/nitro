@@ -1,6 +1,5 @@
 import _ from 'lodash'
-import graphlib from 'graphlib'
-import { walk } from '@buggyorg/graphtools'
+import { deepWalkBack } from './util/walk'
 
 const knownConstants = {
   'math/const': (graph, node) => graph.node(node).params.value
@@ -16,40 +15,6 @@ const evaluateToConstant = {
     let parent = graph.node(node).parent
     let predecessors = deepWalkBack(graph, node, parent)
     return tryEvaluate(graph, predecessors[0].node) + tryEvaluate(graph, predecessors[0].node)
-  }
-}
-
-function deepWalkBack (graph, node, parent = null) {
-  let nodeValue = graph.node(node)
-
-  if (nodeValue.atomic) {
-    let predecessors = _.flatten(Object.keys(nodeValue.inputPorts || {}).map(port => walk.predecessor(graph, node, port)))
-
-    return _.flatten(predecessors.map(p => {
-      if (p === parent) {
-        return _.flatten(Object.keys(graph.node(p).inputPorts || {}).map(port => walk.predecessor(graph, p, port)))
-          .map(p => {
-            return { node: p, successor: node }
-          })
-      } else {
-        return { node: p, successor: node }
-      }
-    }))
-  } else {
-    let predecessors = _.flatten(Object.keys(nodeValue.outputPorts || {}).map(port => walk.predecessorOutPort(graph, node, port)))
-      .map(n => n.node)
-      .filter(n => n !== parent)
-    return predecessors.map(p => {
-      return { node: p, successor: node }
-    })
-  }
-}
-
-function deepPrintBack (graph, node) {
-  let predecessors = deepWalkBack(graph, node)
-  while (predecessors.length > 0) {
-    console.log(JSON.stringify(predecessors.map(p => graph.node(p.node).id)))
-    predecessors = _.flatten(predecessors.map(p => deepWalkBack(graph, p.node, p.successor)))
   }
 }
 
@@ -85,8 +50,6 @@ function createConstantNode (constant) {
 }
 
 export function isConstant (graph, node, parent = null) {
-  graph.sinks().forEach(v => deepPrintBack(graph, v))
-
   if (node == null) {
     // a graph is constant if every node that has no successor is constant
     return graph.sinks().every(v => isConstant(graph, v))
@@ -94,18 +57,43 @@ export function isConstant (graph, node, parent = null) {
     // a node is constant if it is a 'known constant' or if every predecessor is constant
     let nodeValue = graph.node(node)
     if (knownConstants[nodeValue.id] != null) {
-      console.log(`- ${nodeValue.id} is a known constant!`)
       return true
     } else if (knownNonConstants[nodeValue.id] != null) {
-      console.log(`- ${nodeValue.id} is a known non-constant`)
       return false
     } else {
-      let constant = deepWalkBack(graph, node, parent).every(v => isConstant(graph, v.node, v.successor))
+      return deepWalkBack(graph, node, parent).every(v => isConstant(graph, v.node, v.successor))
+    }
+  }
+}
+
+export function rewriteConstants (graph, node, parent = null) {
+  if (node == null) {
+    // a graph is constant if every node that has no successor is constant
+    graph.sinks().every(v => rewriteConstants(graph, v))
+  } else {
+    // a node is constant if it is a 'known constant' or if every predecessor is constant
+    let nodeValue = graph.node(node)
+    if (knownConstants[nodeValue.id] != null) {
+      // console.log(`- ${nodeValue.id} is a known constant!`)
+    } else if (knownNonConstants[nodeValue.id] != null) {
+      // console.log(`- ${nodeValue.id} is a known non-constant`)
+    } else {
+      let constant = deepWalkBack(graph, node, parent).every(v => {
+        const c = isConstant(graph, v.node, v.successor)
+        if (c) {
+          rewriteConstants(graph, v.node, v.successor)
+        }
+        return c
+      })
       if (constant) {
-        const constantNode = createConstantNode(tryEvaluate(graph, node))
+        let constantNode
+        try {
+          constantNode = createConstantNode(tryEvaluate(graph, node))
+        } catch (e) {
+          return
+        }
         constantNode.branchPath = nodeValue.branchPath
         constantNode.branch = nodeValue.branch
-        constantNode.name = nodeValue.name + '-rewritten'
 
         // rewrite the node
         let deletePredecessors = (graph, node, parent) => deepWalkBack(graph, node, parent).forEach(n => {
@@ -114,15 +102,9 @@ export function isConstant (graph, node, parent = null) {
         })
         deletePredecessors(graph, node, parent)
         graph.setNode(node, constantNode)
+        // console.log(`${node} is constant and was rewritten to ${JSON.stringify(constantNode)}`)
 
-        console.log(`${node} is constant and was rewritten to ${JSON.stringify(constantNode)}`)
-        // const fs = require('fs')
-        // fs.writeFileSync('test.json', JSON.stringify(graphlib.json.write(graph)))
-        console.log(JSON.stringify(graphlib.json.write(graph)))
-
-        return deepWalkBack(graph, node, parent).every(v => isConstant(graph, v.node, v.successor))
-      } else {
-        return false
+        deepWalkBack(graph, node, parent).forEach(v => rewriteConstants(graph, v.node, v.successor))
       }
     }
   }
