@@ -20,7 +20,6 @@ const evaluateToConstant = {
 
 function tryEvaluate (graph, node) {
   let nodeValue = graph.node(node)
-  console.log(nodeValue)
   let evaluator = evaluateToConstant[nodeValue.id]
   if (evaluator != null) {
     return evaluator(graph, node)
