@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import { walk } from '@buggyorg/graphtools'
 import { deepWalkBack } from './util/walk'
+import { replaceNode } from './util/rewrite'
 
 const knownConstants = {
   'math/const': (graph, node) => graph.node(node).params.value
@@ -85,6 +85,7 @@ export function rewriteConstants (graph, node, parent = null) {
         }
         return c
       })
+
       if (constant) {
         let constantNode
         try {
@@ -93,35 +94,20 @@ export function rewriteConstants (graph, node, parent = null) {
           return
         }
 
-        constantNode.path = nodeValue.path
-        constantNode.branchPath = nodeValue.branchPath
-        constantNode.branch = nodeValue.branch
-
-        // rewrite the node
         let deletePredecessors = (graph, node, parent) => deepWalkBack(graph, node, parent).forEach(n => {
           deletePredecessors(graph, n.node, node)
           graph.removeNode(n.node)
         })
         deletePredecessors(graph, node, parent)
 
-        const newNode = `${node}:rewritten`
-        graph.setNode(newNode, constantNode)
-        graph.setParent(newNode, nodeValue.parent)
-
-        Object.keys(nodeValue.outputPorts).forEach(p => {
-          walk.successorInPort(graph, node, p).forEach(n => {
-            graph.setEdge(newNode, n.node, {
-              outPort: Object.keys(constantNode.outputPorts)[0],
-              inPort: n.port
-            },
-              `${newNode}@${Object.keys(constantNode.outputPorts)[0]}_to_${n.node}@${n.port}`)
-          })
+        replaceNode(graph, node, constantNode, {
+          outputPorts: [{
+            oldPort: Object.keys(nodeValue.outputPorts)[0],
+            newPort: Object.keys(constantNode.outputPorts)[0]
+          }]
         })
 
-        graph.removeNode(node)
-        // console.log(`${node} is constant and was rewritten to ${JSON.stringify(constantNode)}`)
-
-      // deepWalkBack(graph, newNode, parent).forEach(v => rewriteConstants(graph, v.node, v.successor))
+      // console.log(`${node} is constant and was rewritten to ${JSON.stringify(constantNode)}`)
       }
     }
   }
