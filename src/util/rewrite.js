@@ -26,7 +26,7 @@ export function replaceNode (graph, node, newValue, portRewrites) {
     walk.predecessorOutPort(graph, node, oldPort).forEach(n => {
       const edgeName = `${n.node}@${n.port}_to_${newNode}@${newPort}`
 
-      graph.setEdge(newNode, n.node, {
+      graph.setEdge(n.node, newNode, {
         outPort: n.port,
         inPort: newPort
       }, edgeName)
