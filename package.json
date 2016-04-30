@@ -8,7 +8,7 @@
     "example": "examples"
   },
   "scripts": {
-    "test": "node node_modules/standard/bin/cmd.js src/**/*.js && node_modules/mocha/bin/mocha --compilers js:babel-register",
+    "test": "node_modules/mocha/bin/mocha --compilers js:babel-register && standard src/**/*.js",
     "build": "babel src -d lib",
     "prepublish": "babel src -d lib"
   },
