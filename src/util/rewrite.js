@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 
 /**
@@ -42,6 +43,45 @@ export function replaceNode (graph, node, newValue, portRewrites) {
         outPort: newPort,
         inPort: n.port
       }, edgeName)
+    })
+  })
+
+  graph.removeNode(node)
+}
+
+/**
+ * Unpacks and removes a compound node.
+ * @param graph graph
+ * @param n name of the compound node to unpack
+ */
+export function unpackCompoundNode (graph, node) {
+  const nodeValue = graph.node(node)
+  let children = graph.children(node)
+
+  // move the compound's children one level up (so that the compound can be safely removed)
+  children.forEach((c) => {
+    graph.setParent(c, nodeValue.parent)
+  })
+
+  // create new input edges for all edges that previosly used the compound node's input ports
+  _.flatten(children.map((c) => graph.inEdges(c, node))).forEach((e) => {
+    const edge = graph.edge(e)
+    walk.predecessorOutPort(graph, node, edge.outPort).forEach((predecessor) => {
+      graph.setEdge(e.w, predecessor.node, {
+        outPort: predecessor.port,
+        inPort: edge.inPort
+      }, e.name + '-rewritten')
+    })
+  })
+
+  // create new output edges for all edges that previously used the compound node's output ports
+  _.flatten(children.map((c) => graph.outEdges(c, node))).forEach((e) => {
+    const edge = graph.edge(e)
+    walk.successorInPort(graph, node, edge.inPort).forEach((successor) => {
+      graph.setEdge(e.v, successor.node, {
+        outPort: edge.outPort,
+        inPort: successor.port
+      }, e.name + '-rewritten')
     })
   })
 
