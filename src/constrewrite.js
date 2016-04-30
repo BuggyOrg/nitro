@@ -16,7 +16,8 @@ const evaluateToConstant = {
     let parent = graph.node(node).parent
     let predecessors = deepWalkBack(graph, node, parent)
     return tryEvaluate(graph, predecessors[0].node) + tryEvaluate(graph, predecessors[0].node)
-  }
+  },
+  'translator/number_to_string': (graph, node) => `${tryEvaluate(graph, graph.predecessors(node)[0])}`
 }
 
 function tryEvaluate (graph, node) {
@@ -30,7 +31,7 @@ function tryEvaluate (graph, node) {
 }
 
 function createConstantNode (constant) {
-  // TODO create boolean, string and object constants
+  // TODO create boolean, array and object constants
   if (_.isNumber(constant)) {
     return {
       id: 'math/const',
@@ -40,8 +41,18 @@ function createConstantNode (constant) {
       atomic: true,
       path: [],
       params: { value: constant },
-      branchPath: 'const',
-      branch: 'const',
+      name: 'const'
+    }
+  } else if (_.isString(constant)) {
+    // TODO actual component for string constants might be different later
+    return {
+      id: 'string/const',
+      version: '0.2.0',
+      inputPorts: {},
+      outputPorts: { output: 'string' },
+      atomic: true,
+      path: [],
+      params: { value: constant },
       name: 'const'
     }
   } else {

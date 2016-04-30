@@ -21,6 +21,7 @@ getInput
     let graph = graphlib.json.read(JSON.parse(serializedGraph))
     rewriteConstants(graph)
     cleanupCompounds(graph)
+    rewriteConstants(graph)
 
     if (program.out) {
       fs.writeFileSync(program.out, JSON.stringify(graphlib.json.write(graph)), 'utf8')
