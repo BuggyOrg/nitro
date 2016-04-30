@@ -6,6 +6,7 @@ import getStdin from 'get-stdin'
 import fs from 'fs'
 import path from 'path'
 import { rewriteConstants } from './constrewrite'
+import cleanupCompounds from './cleanupCompounds'
 
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '/../package.json')))['version'])
@@ -19,6 +20,7 @@ getInput
   .then((serializedGraph) => {
     let graph = graphlib.json.read(JSON.parse(serializedGraph))
     rewriteConstants(graph)
+    cleanupCompounds(graph)
 
     if (program.out) {
       fs.writeFileSync(program.out, JSON.stringify(graphlib.json.write(graph)), 'utf8')
