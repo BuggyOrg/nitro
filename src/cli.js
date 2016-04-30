@@ -13,7 +13,7 @@ program
   .option('-o, --out <graph output file>', 'Set a custom output file. If none is given, stdout is used.')
   .parse(process.argv)
 
-let getInput = program.graphfile ? Promise.resolve(program.graphfile) : getStdin()
+let getInput = program.graphfile ? Promise.resolve(fs.readFileSync(program.graphfile, 'utf8')) : getStdin()
 
 getInput
   .then((serializedGraph) => {
