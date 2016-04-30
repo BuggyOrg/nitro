@@ -95,8 +95,10 @@ export function rewriteConstants (graph, node, parent = null) {
         }
 
         let deletePredecessors = (graph, node, parent) => deepWalkBack(graph, node, parent).forEach(n => {
-          deletePredecessors(graph, n.node, node)
-          graph.removeNode(n.node)
+          if (graph.successors(n.node).length <= 1) {
+            deletePredecessors(graph, n.node, node)
+            graph.removeNode(n.node)
+          }
         })
         deletePredecessors(graph, node, parent)
 
