@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import { walk } from '@buggyorg/graphtools'
 import { deepWalkBack } from './util/walk'
 
 const knownConstants = {
@@ -91,6 +92,8 @@ export function rewriteConstants (graph, node, parent = null) {
         } catch (e) {
           return
         }
+
+        constantNode.path = nodeValue.path
         constantNode.branchPath = nodeValue.branchPath
         constantNode.branch = nodeValue.branch
 
@@ -100,10 +103,25 @@ export function rewriteConstants (graph, node, parent = null) {
           graph.removeNode(n.node)
         })
         deletePredecessors(graph, node, parent)
-        graph.setNode(node, constantNode)
+
+        const newNode = `${node}:rewritten`
+        graph.setNode(newNode, constantNode)
+        graph.setParent(newNode, nodeValue.parent)
+
+        Object.keys(nodeValue.outputPorts).forEach(p => {
+          walk.successorInPort(graph, node, p).forEach(n => {
+            graph.setEdge(newNode, n.node, {
+              outPort: Object.keys(constantNode.outputPorts)[0],
+              inPort: n.port
+            },
+              `${newNode}@${Object.keys(constantNode.outputPorts)[0]}_to_${n.node}@${n.port}`)
+          })
+        })
+
+        graph.removeNode(node)
         // console.log(`${node} is constant and was rewritten to ${JSON.stringify(constantNode)}`)
 
-        deepWalkBack(graph, node, parent).forEach(v => rewriteConstants(graph, v.node, v.successor))
+      // deepWalkBack(graph, newNode, parent).forEach(v => rewriteConstants(graph, v.node, v.successor))
       }
     }
   }

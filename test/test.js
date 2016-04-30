@@ -31,4 +31,13 @@ describe('constant branch replacer', () => {
     constRewrite.rewriteConstants(graph)
     expect(graphlib.json.write(graph)).to.deep.equal(originalGraph)
   })
+
+  it('correctly inserts and connects the new node', () => {
+    var graph = graphlib.json.read(JSON.parse(fs.readFileSync('test/fixtures/constant.json')))
+    constRewrite.rewriteConstants(graph)
+
+    expect(graph.parent('inc:add:rewritten')).to.equal('inc')
+    expect(graph.successors('inc:add:rewritten')).to.deep.equal(['inc'])
+    expect(graph.predecessors('inc:add:rewritten')).to.be.empty
+  })
 })
