@@ -20,7 +20,7 @@ getInput
   .then((serializedGraph) => {
     let graph = graphlib.json.read(JSON.parse(serializedGraph))
     rewriteConstants(graph)
-    cleanupCompounds(graph)
+    //cleanupCompounds(graph)
     rewriteConstants(graph)
 
     if (program.out) {

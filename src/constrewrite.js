@@ -15,7 +15,7 @@ const evaluateToConstant = {
   'math/add': (graph, node) => {
     let parent = graph.node(node).parent
     let predecessors = deepWalkBack(graph, node, parent)
-    return tryEvaluate(graph, predecessors[0].node) + tryEvaluate(graph, predecessors[0].node)
+    return tryEvaluate(graph, predecessors[0].node) + tryEvaluate(graph, predecessors[1].node)
   },
   'translator/number_to_string': (graph, node) => `${tryEvaluate(graph, graph.predecessors(node)[0])}`
 }
