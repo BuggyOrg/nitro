@@ -5,6 +5,7 @@ import graphlib from 'graphlib'
 import getStdin from 'get-stdin'
 import fs from 'fs'
 import path from 'path'
+import _ from 'lodash'
 import { rewriteConstants } from './constrewrite'
 import cleanupCompounds from './cleanupCompounds'
 
@@ -19,9 +20,15 @@ let getInput = program.graphfile ? Promise.resolve(fs.readFileSync(program.graph
 getInput
   .then((serializedGraph) => {
     let graph = graphlib.json.read(JSON.parse(serializedGraph))
-    rewriteConstants(graph)
-    //cleanupCompounds(graph)
-    rewriteConstants(graph)
+    
+    let rewriteFunctions = [ rewriteConstants, cleanupCompounds ]
+    let previousGraph
+    let newGraph = graphlib.json.write(graph)
+    do {
+      previousGraph = newGraph
+      rewriteFunctions.forEach(f => f(graph))
+      newGraph = graphlib.json.write(graph)
+    } while (!_.isEqual(newGraph, previousGraph))
 
     if (program.out) {
       fs.writeFileSync(program.out, JSON.stringify(graphlib.json.write(graph)), 'utf8')
