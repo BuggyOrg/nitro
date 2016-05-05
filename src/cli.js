@@ -6,9 +6,8 @@ import getStdin from 'get-stdin'
 import fs from 'fs'
 import path from 'path'
 import _ from 'lodash'
-// import { rewriteConstants } from './constrewrite'
 import cleanupCompounds from './cleanupCompounds'
-import { replaceConstantAddition } from './rewrite/rules'
+import * as rewriteRules from './rewrite/rules'
 
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '/../package.json')))['version'])
@@ -22,7 +21,7 @@ getInput
   .then((serializedGraph) => {
     let graph = graphlib.json.read(JSON.parse(serializedGraph))
 
-    let rewriteFunctions = [ replaceConstantAddition, cleanupCompounds ]
+    let rewriteFunctions = _.values(rewriteRules).concat([ cleanupCompounds ])
     let previousGraph
     let newGraph = graphlib.json.write(graph)
     do {
