@@ -1,15 +1,25 @@
+import _ from 'lodash'
 import { atomicPredecessorsOutPort } from '../util/atomicWalk'
 
 export function any (outputAlias) {
   return (graph, n) => {
-    const node = graph.node(n)
-    const match = {}
-    match[outputAlias] = Object.keys(node.outputPorts)[0]
-    return match
+    return { node: graph.node(n) }
   }
 }
 
-export function byIdAndInputs (id, inputs) {
+export function oneOf (...rules) {
+  return (graph, n) => {
+    for (let i = 0; i < rules.length; i++) {
+      let match = rules[i](graph, n)
+      if (match !== false) {
+        return match
+      }
+    }
+    return false
+  }
+}
+
+export function byIdAndInputs (id, inputs = {}) {
   return (graph, n) => {
     const node = graph.node(n)
     if (node.id === id) {
@@ -18,7 +28,12 @@ export function byIdAndInputs (id, inputs) {
         let predecessors = atomicPredecessorsOutPort(graph, n, inputPort)
         if (predecessors.length === 1) {
           return predecessors.every(({node, port}) => {
-            match.inputs[inputPort] = inputs[inputPort](graph, node)
+            let inputMatcher = inputs[inputPort]
+            if (_.isFunction(inputMatcher)) {
+              match.inputs[inputPort] = inputs[inputPort](graph, node)
+            } else {
+              match.inputs[inputMatcher.alias || inputPort] = inputMatcher.match(graph, node)
+            }
             return match.inputs[inputPort] !== false
           })
         } else {
@@ -37,7 +52,7 @@ export function constantNode (outputAlias) {
     const node = graph.node(n)
     if (node.id === 'math/const') {
       const match = { node: n, outputs: {} }
-      match.outputs[outputAlias] = Object.keys(node.outputPorts)[0]
+      match.outputs[outputAlias || Object.keys(node.outputPorts)[0]] = Object.keys(node.outputPorts)[0]
       return match
     } else {
       return false
