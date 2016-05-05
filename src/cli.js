@@ -6,8 +6,9 @@ import getStdin from 'get-stdin'
 import fs from 'fs'
 import path from 'path'
 import _ from 'lodash'
-import { rewriteConstants } from './constrewrite'
+// import { rewriteConstants } from './constrewrite'
 import cleanupCompounds from './cleanupCompounds'
+import { replaceConstantAddition } from './rewrite/rules'
 
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '/../package.json')))['version'])
@@ -20,13 +21,15 @@ let getInput = program.graphfile ? Promise.resolve(fs.readFileSync(program.graph
 getInput
   .then((serializedGraph) => {
     let graph = graphlib.json.read(JSON.parse(serializedGraph))
-    
-    let rewriteFunctions = [ rewriteConstants, cleanupCompounds ]
+
+    let rewriteFunctions = [ replaceConstantAddition, cleanupCompounds ]
     let previousGraph
     let newGraph = graphlib.json.write(graph)
     do {
       previousGraph = newGraph
-      rewriteFunctions.forEach(f => f(graph))
+      rewriteFunctions.forEach(f => {
+        f(graph)
+      })
       newGraph = graphlib.json.write(graph)
     } while (!_.isEqual(newGraph, previousGraph))
 
@@ -36,4 +39,4 @@ getInput
       process.stdout.write(JSON.stringify(graphlib.json.write(graph)))
     }
   })
-  .catch((e) => console.error(e))
+  .catch((e) => console.log(e, e.stack.split('\n')))
