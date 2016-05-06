@@ -48,13 +48,18 @@ export function byIdAndInputs (id, inputs = {}) {
   }
 }
 
-export function constantNode (outputAlias) {
+export function constantNode (value, outputAlias) {
   return (graph, n) => {
     const node = graph.node(n)
     if (node.id === 'math/const') {
       const match = { node: n, outputs: {} }
       match.outputs[outputAlias || Object.keys(node.outputPorts)[0]] = Object.keys(node.outputPorts)[0]
-      return match
+
+      if (_.isNumber(value)) {
+        return value === node.params.value ? match : false
+      } else {
+        return match
+      }
     } else {
       return false
     }

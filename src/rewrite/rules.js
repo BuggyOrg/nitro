@@ -32,6 +32,31 @@ export const replaceConstantCalculations = rule(
   })
 )
 
+export const replaceMultiplicationWithZero = rule(
+  match.oneOf(
+    match.byIdAndInputs('math/multiply', { m1: match.constantNode(0), m2: match.any() }),
+    match.byIdAndInputs('math/multiply', { m1: match.any(), m2: match.constantNode(0) })
+  ),
+  replace.withNode((graph, node, match) => {
+    return {
+      node: {
+        id: 'math/const',
+        version: '0.2.0',
+        inputPorts: {},
+        outputPorts: { output: 'number' },
+        atomic: true,
+        path: [],
+        params: { value: 0 },
+        name: 'const'
+      },
+      rewriteOutputPorts: [{
+        oldPort: Object.keys(graph.node(node).outputPorts)[0],
+        newPort: 'output'
+      }]
+    }
+  })
+)
+
 export const replaceConstantNumberToString = rule(
   match.byIdAndInputs('translator/number_to_string', { input: match.byIdAndInputs('math/const') }),
   replace.withNode((graph, node, match) => {
