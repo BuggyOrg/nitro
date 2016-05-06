@@ -1,16 +1,14 @@
 import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
-import { atomicPredecessorsOutPort } from './atomicWalk'
+import { atomicPredecessorsOutPort, atomicSuccessorsInPort } from './atomicWalk'
 
 export function deleteUnusedPredecessors (graph, node) {
   const nodeValue = graph.node(node)
   Object.keys(nodeValue.inputPorts || {}).forEach((port) => {
     atomicPredecessorsOutPort(graph, node, port).forEach((predecessor) => {
-      if (walk.successor(graph, predecessor.node, predecessor.port).length <= 1) {
-        if (graph.node(predecessor.node)) {
-          deleteUnusedPredecessors(graph, predecessor.node)
-          graph.removeNode(predecessor.node)
-        }
+      if (atomicSuccessorsInPort(graph, predecessor.node, predecessor.port).length <= 1) {
+        deleteUnusedPredecessors(graph, predecessor.node)
+        graph.removeNode(predecessor.node)
       }
     })
   })
