@@ -31,10 +31,20 @@ export function byIdAndInputs (id, inputs = {}) {
             let inputMatcher = inputs[inputPort]
             if (_.isFunction(inputMatcher)) {
               match.inputs[inputPort] = inputs[inputPort](graph, node)
-              return match.inputs[inputPort] !== false
+              if (match.inputs[inputPort] !== false) {
+                match.inputs[inputPort].port = inputPort  
+                return true
+              } else {
+                return false
+              }
             } else {
               match.inputs[inputMatcher.alias || inputPort] = inputMatcher.match(graph, node)
-              return match.inputs[inputMatcher.alias || inputPort] !== false
+              if (match.inputs[inputMatcher.alias || inputPort] !== false) {
+                match.inputs[inputMatcher.alias || inputPort].port = inputPort
+                return true  
+              } else {
+                return false
+              }
             }
           })
         } else {
