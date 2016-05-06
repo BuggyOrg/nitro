@@ -21,7 +21,7 @@ export const replaceConstantCalculations = rule(
       },
       rewriteOutputPorts: [{
         oldPort: Object.keys(graph.node(node).outputPorts)[0],
-        newNode: 'output'
+        newPort: 'output'
       }]
     }
   })
