@@ -62,12 +62,21 @@ export const replaceAdditionWithZero = rule(
     match.byIdAndInputs('math/add', { s1: match.constantNode(0), s2: { match: match.any(), alias: 'nonZeroInput' } }),
     match.byIdAndInputs('math/add', { s1: { match: match.any(), alias: 'nonZeroInput' }, s2: match.constantNode(0) })
   ),
-  replace.removeNode((graph, node, match) => {
-    return [{
-      fromPort: match.inputs.nonZeroInput.port,
-      toPort: 'sum'
-    }]
-  })
+  replace.removeNode((graph, node, match) => [{
+    fromPort: match.inputs.nonZeroInput.port,
+    toPort: Object.keys(graph.node(node).outputPorts)[0]
+  }])
+)
+
+export const replaceMultiplicationWithOne = rule(
+  match.oneOf(
+    match.byIdAndInputs('math/multiply', { m1: match.constantNode(1), m2: { match: match.any(), alias: 'nonZeroInput' } }),
+    match.byIdAndInputs('math/multiply', { m1: { match: match.any(), alias: 'nonZeroInput' }, m2: match.constantNode(1) })
+  ),
+  replace.removeNode((graph, node, match) => [{
+    fromPort: match.inputs.nonZeroInput.port,
+    toPort: Object.keys(graph.node(node).outputPorts)[0]
+  }])
 )
 
 export const replaceConstantNumberToString = rule(
