@@ -8,6 +8,11 @@ export const replaceConstantCalculations = rule(
     match.byIdAndInputs('math/multiply', { m1: { match: match.constantNode(), alias: 'a' }, m2: { match: match.constantNode(), alias: 'b' } })
   ),
   replace.withNode((graph, node, match) => {
+    const evaluators = {
+      'math/add': (a, b) => a.params.value + b.params.value,
+      'math/multiply': (a, b) => a.params.value * b.params.value
+    }
+
     return {
       node: {
         id: 'math/const',
@@ -16,7 +21,7 @@ export const replaceConstantCalculations = rule(
         outputPorts: { output: 'number' },
         atomic: true,
         path: [],
-        params: { value: graph.node(match.inputs.a.node).params.value + graph.node(match.inputs.b.node).params.value },
+        params: { value: evaluators[graph.node(node).id](graph.node(match.inputs.a.node), graph.node(match.inputs.b.node)) },
         name: 'const'
       },
       rewriteOutputPorts: [{
