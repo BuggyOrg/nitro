@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { atomicPredecessorsOutPort } from '../util/atomicWalk'
+import { walk } from '@buggyorg/graphtools'
 
 export function any (outputAlias) {
   return (graph, n) => {
@@ -25,28 +25,47 @@ export function byIdAndInputs (id, inputs = {}) {
     if (node.id === id) {
       const match = { node: n, inputs: {} }
       const isMatch = Object.keys(inputs).every((inputPort) => {
-        let predecessors = atomicPredecessorsOutPort(graph, n, inputPort)
+        let predecessors = walk.predecessorOutPort(graph, n, inputPort)
         if (predecessors.length === 1) {
-          return predecessors.every(({node, port}) => {
+          const tryMatchPredecessor = ({node, port}) => {
             let inputMatcher = inputs[inputPort]
             if (_.isFunction(inputMatcher)) {
-              match.inputs[inputPort] = inputs[inputPort](graph, node)
-              if (match.inputs[inputPort] !== false) {
-                match.inputs[inputPort].port = inputPort  
+              const inputMatch = inputMatcher(graph, node)
+              if (inputMatch !== false) {
+                match.inputs[inputPort] = inputMatch
+                match.inputs[inputPort].port = inputPort
                 return true
               } else {
                 return false
               }
             } else {
-              match.inputs[inputMatcher.alias || inputPort] = inputMatcher.match(graph, node)
-              if (match.inputs[inputMatcher.alias || inputPort] !== false) {
+              const inputMatch = inputMatcher.match(graph, node)
+              if (inputMatch !== false) {
+                match.inputs[inputMatcher.alias || inputPort] = inputMatch
                 match.inputs[inputMatcher.alias || inputPort].port = inputPort
-                return true  
+                return true
               } else {
                 return false
               }
             }
-          })
+          }
+
+          const predecessorMatches = predecessors.every(tryMatchPredecessor)
+          if (predecessorMatches) {
+            return true
+          } else {
+            while (!graph.node(predecessors[0].node).atomic) {
+              predecessors = walk.predecessorOutPort(graph, predecessors[0].node, predecessors[0].port)
+              if (predecessors.length === 1) {
+                if (predecessors.every(tryMatchPredecessor)) {
+                  return true
+                }
+              } else {
+                return false
+              }
+            }
+            return false
+          }
         } else {
           return false
         }
