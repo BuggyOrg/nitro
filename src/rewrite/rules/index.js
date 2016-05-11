@@ -3,5 +3,6 @@ import * as mathRules from './math'
 import * as logicRules from './logic'
 
 export default [
-  ...values(mathRules)
+  ...values(mathRules),
+  ...values(logicRules)
 ]
