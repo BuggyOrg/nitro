@@ -7,7 +7,7 @@ import fs from 'fs'
 import path from 'path'
 import _ from 'lodash'
 import cleanupCompounds from './cleanupCompounds'
-import * as rewriteRules from './rewrite/rules'
+import rewriteRules from './rewrite/rules/index'
 
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '/../package.json')))['version'])
@@ -20,8 +20,7 @@ let getInput = program.graphfile ? Promise.resolve(fs.readFileSync(program.graph
 getInput
   .then((serializedGraph) => {
     let graph = graphlib.json.read(JSON.parse(serializedGraph))
-
-    let rewriteFunctions = _.values(rewriteRules).concat([ cleanupCompounds ])
+    let rewriteFunctions = [ ...rewriteRules, cleanupCompounds ]
     let previousGraph
     let newGraph = graphlib.json.write(graph)
     do {

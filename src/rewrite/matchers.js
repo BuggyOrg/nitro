@@ -86,6 +86,8 @@ export function constantNode (value, outputAlias) {
 
       if (_.isNumber(value)) {
         return value === node.params.value ? match : false
+      } else if (_.isBoolean(value)) {
+        return value === node.params.value ? match : false
       } else {
         return match
       }

@@ -1,6 +1,4 @@
-import * as match from './matchers'
-import * as replace from './replacers'
-import rule from './rewriteRule'
+import { rule, match, replace } from '../rewrite'
 
 export const replaceConstantCalculations = rule(
   match.oneOf(

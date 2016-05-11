@@ -1,4 +1,7 @@
-export default function (match, rewrite) {
+import * as allMatchers from './matchers'
+import * as allReplacers from './replacers'
+
+export function rule (match, rewrite) {
   return (graph) => {
     let nodes = graph.nodes()
     for (let i = 0; i < nodes.length; i++) {
@@ -10,3 +13,6 @@ export default function (match, rewrite) {
     }
   }
 }
+
+export const match = allMatchers
+export const replace = allReplacers
