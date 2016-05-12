@@ -1,4 +1,5 @@
 import { rule, match, replace } from '../rewrite'
+import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors } from '../../util/rewrite'
 
 function constantBool (value) {
   return {
@@ -99,4 +100,67 @@ export const replaceDoubleNegation = rule(
       }
     }]
   })
+)
+
+export const replaceDeMorganAnd = rule(
+  match.byIdAndInputs('logic/and', {
+    i1: match.byIdAndInputs('logic/not', { input: match.any() }),
+    i2: match.byIdAndInputs('logic/not', { input: match.any() })
+  }),
+  (graph, node, match) => {
+    const newOrNode = `${node}:rewritten:or`
+    graph.setNode(newOrNode, {
+      'id': 'logic/or',
+      'inputPorts': {
+        'i1': 'bool',
+        'i2': 'bool'
+      },
+      'outputPorts': {
+        'or': 'bool'
+      },
+      'atomic': true,
+      'version': '0.1.0'
+    })
+
+    const newNotNode = `${node}:rewritten:not`
+    graph.setNode(newNotNode, {
+      'id': 'logic/not',
+      'inputPorts': {
+        'input': 'bool'
+      },
+      'outputPorts': {
+        'output': 'bool'
+      },
+      'atomic': true,
+      'version': '0.1.0'
+    })
+
+    graph.setEdge(newOrNode, newNotNode, {
+      outPort: 'or',
+      inPort: 'input'
+    }, `${newOrNode}@or_to_${newNotNode}@input`)
+
+    createEdgeToEachSuccessor(graph,
+      { node: newNotNode, port: 'output' },
+      { node: node, port: 'and' })
+
+    createEdgeFromEachPredecessor(graph, {
+      node: match.inputs.i1.node,
+      port: 'input'
+    }, {
+      node: newOrNode,
+      port: 'i1'
+    })
+
+    createEdgeFromEachPredecessor(graph, {
+      node: match.inputs.i2.node,
+      port: 'input'
+    }, {
+      node: newOrNode,
+      port: 'i2'
+    })
+
+    deleteUnusedPredecessors(graph, node)
+    graph.removeNode(node)
+  }
 )

@@ -100,3 +100,23 @@ export function unpackCompoundNode (graph, node) {
 
   graph.removeNode(node)
 }
+
+export function createEdge (graph, source, target) {
+  const edgeName = `${source.node}@${source.port}_to_${target.node}@${target.node}`
+  graph.setEdge(source.node, target.node, {
+    outPort: source.port,
+    inPort: target.port
+  }, edgeName)
+}
+
+export function createEdgeToEachSuccessor (graph, source, target) {
+  walk.successorInPort(graph, target.node, target.port).forEach((target) => {
+    createEdge(graph, source, target)
+  })
+}
+
+export function createEdgeFromEachPredecessor (graph, source, target) {
+  walk.predecessorOutPort(graph, source.node, source.port).forEach((source) => {
+    createEdge(graph, source, target)
+  })
+}

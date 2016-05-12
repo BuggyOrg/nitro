@@ -1,4 +1,4 @@
-import { replaceNode, deleteUnusedPredecessors } from '../util/rewrite'
+import { replaceNode, deleteUnusedPredecessors, createEdgeToEachSuccessor } from '../util/rewrite'
 import { walk } from '@buggyorg/graphtools'
 
 export function withNode (nodeCreator) {
@@ -49,13 +49,7 @@ export function bridgeOver (bridgeCreator) {
     let bridges = bridgeCreator(graph, node, match)
 
     bridges.forEach(({ source, target }) => {
-      walk.successorInPort(graph, target.node, target.port).forEach((target) => {
-        const edgeName = `${source.node}@${source.port}_to_${target.node}@${target.node}`
-        graph.setEdge(source.node, target.node, {
-          outPort: source.port,
-          inPort: target.port
-        }, edgeName)
-      })
+      createEdgeToEachSuccessor(graph, source, target)
     })
 
     deleteUnusedPredecessors(graph, node)
