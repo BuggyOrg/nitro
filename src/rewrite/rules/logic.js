@@ -85,13 +85,18 @@ export const replaceConstantNot = rule(
   })
 )
 
-// TODO remove multiple nodes and re-connect the ports
-/*
 export const replaceDoubleNegation = rule(
   match.byIdAndInputs('logic/not', { input: match.byIdAndInputs('logic/not', { input: match.any() }) }),
-  replace.removeNode((graph, node, match) => [{
-    fromPort: match.inputs.input.inputs.input.port,
-    toPort: Object.keys(graph.node(node).outputPorts)[0]
-  }])
+  replace.bridgeOver((graph, node, match) => {
+    return [{
+      source: {
+        node: match.inputs.input.inputs.input.node,
+        port: 'output'
+      },
+      target: {
+        node: node,
+        port: 'output'
+      }
+    }]
+  })
 )
-*/
