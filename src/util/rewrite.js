@@ -12,7 +12,7 @@ function getInputPort (graph, input) {
         port: ports[0]
       }
     } else {
-      throw new Error('target port could not be selected automatically')
+      throw new Error(`input port of node ${input} could not be selected automatically`)
     }
   } else {
     return input
@@ -29,13 +29,19 @@ function getOutputPort (graph, output) {
         port: ports[0]
       }
     } else {
-      throw new Error('source port could not be selected automatically')
+      throw new Error(`output port of node ${output} could not be selected automatically`)
     }
   } else {
     return output
   }
 }
 
+/**
+ * Removes all predecessors of a node that are only used by that
+ * node or predecessors of it.
+ * @param graph graph
+ * @param node name of the node to remove all unused predecessors of
+ */
 export function deleteUnusedPredecessors (graph, node) {
   const nodeValue = graph.node(node)
   Object.keys(nodeValue.inputPorts || {}).forEach((port) => {
@@ -147,13 +153,29 @@ export function createEdge (graph, source, target) {
 }
 
 export function createEdgeToEachSuccessor (graph, source, target) {
+  source = getOutputPort(graph, source)
+  target = getOutputPort(graph, target)
+
   walk.successorInPort(graph, target.node, target.port).forEach((target) => {
     createEdge(graph, source, target)
   })
 }
 
 export function createEdgeFromEachPredecessor (graph, source, target) {
+  source = getInputPort(graph, source)
+  target = getInputPort(graph, target)
+
   walk.predecessorOutPort(graph, source.node, source.port).forEach((source) => {
     createEdge(graph, source, target)
   })
+}
+
+/**
+ * Removes a node and all unused predecessors from a graph.
+ * @param graph graph
+ * @param node name of the node to remove
+ */
+export function deepRemoveNode (graph, node) {
+  deleteUnusedPredecessors(graph, node)
+  graph.removeNode(node)
 }

@@ -137,25 +137,15 @@ export const replaceDeMorganAnd = rule(
 
     createEdge(graph, newOrNode, newNotNode)
 
-    createEdgeToEachSuccessor(graph,
-      { node: newNotNode, port: 'output' },
-      { node: node, port: 'and' })
+    createEdgeToEachSuccessor(graph, newNotNode, node)
 
-    createEdgeFromEachPredecessor(graph, {
-      node: match.inputs.i1.node,
-      port: 'input'
-    }, {
-      node: newOrNode,
-      port: 'i1'
-    })
+    createEdgeFromEachPredecessor(graph,
+      match.inputs.i1.node,
+      { node: newOrNode, port: 'i1' })
 
-    createEdgeFromEachPredecessor(graph, {
-      node: match.inputs.i2.node,
-      port: 'input'
-    }, {
-      node: newOrNode,
-      port: 'i2'
-    })
+    createEdgeFromEachPredecessor(graph,
+      match.inputs.i2.node,
+      { node: newOrNode, port: 'i2' })
 
     deleteUnusedPredecessors(graph, node)
     graph.removeNode(node)
@@ -198,25 +188,15 @@ export const replaceDeMorganOr = rule(
 
     createEdge(graph, newAndNode, newNotNode)
 
-    createEdgeToEachSuccessor(graph,
-      { node: newNotNode, port: 'output' },
-      { node: node, port: 'and' })
+    createEdgeToEachSuccessor(graph, newNotNode, node)
 
-    createEdgeFromEachPredecessor(graph, {
-      node: match.inputs.i1.node,
-      port: 'input'
-    }, {
-      node: newAndNode,
-      port: 'i1'
-    })
+    createEdgeFromEachPredecessor(graph,
+      match.inputs.i1.node,
+      { node: newAndNode, port: 'i1' })
 
-    createEdgeFromEachPredecessor(graph, {
-      node: match.inputs.i2.node,
-      port: 'input'
-    }, {
-      node: newAndNode,
-      port: 'i2'
-    })
+    createEdgeFromEachPredecessor(graph,
+      match.inputs.i2.node,
+      { node: newAndNode, port: 'i2' })
 
     deleteUnusedPredecessors(graph, node)
     graph.removeNode(node)
