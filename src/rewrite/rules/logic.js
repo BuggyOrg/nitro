@@ -1,5 +1,5 @@
 import { rule, match, replace } from '../rewrite'
-import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge } from '../../util/rewrite'
 
 function constantBool (value) {
   return {
@@ -135,10 +135,7 @@ export const replaceDeMorganAnd = rule(
       'version': '0.1.0'
     })
 
-    graph.setEdge(newOrNode, newNotNode, {
-      outPort: 'or',
-      inPort: 'input'
-    }, `${newOrNode}@or_to_${newNotNode}@input`)
+    createEdge(graph, newOrNode, newNotNode)
 
     createEdgeToEachSuccessor(graph,
       { node: newNotNode, port: 'output' },
@@ -157,6 +154,67 @@ export const replaceDeMorganAnd = rule(
       port: 'input'
     }, {
       node: newOrNode,
+      port: 'i2'
+    })
+
+    deleteUnusedPredecessors(graph, node)
+    graph.removeNode(node)
+  }
+)
+
+
+export const replaceDeMorganOr = rule(
+  match.byIdAndInputs('logic/or', {
+    i1: match.byIdAndInputs('logic/not', { input: match.any() }),
+    i2: match.byIdAndInputs('logic/not', { input: match.any() })
+  }),
+  (graph, node, match) => {
+    const newAndNode = `${node}:rewritten:and`
+    graph.setNode(newAndNode, {
+      'id': 'logic/and',
+      'inputPorts': {
+        'i1': 'bool',
+        'i2': 'bool'
+      },
+      'outputPorts': {
+        'and': 'bool'
+      },
+      'atomic': true,
+      'version': '0.1.0'
+    })
+
+    const newNotNode = `${node}:rewritten:not`
+    graph.setNode(newNotNode, {
+      'id': 'logic/not',
+      'inputPorts': {
+        'input': 'bool'
+      },
+      'outputPorts': {
+        'output': 'bool'
+      },
+      'atomic': true,
+      'version': '0.1.0'
+    })
+
+    createEdge(graph, newAndNode, newNotNode)
+
+    createEdgeToEachSuccessor(graph,
+      { node: newNotNode, port: 'output' },
+      { node: node, port: 'and' })
+
+    createEdgeFromEachPredecessor(graph, {
+      node: match.inputs.i1.node,
+      port: 'input'
+    }, {
+      node: newAndNode,
+      port: 'i1'
+    })
+
+    createEdgeFromEachPredecessor(graph, {
+      node: match.inputs.i2.node,
+      port: 'input'
+    }, {
+      node: newAndNode,
       port: 'i2'
     })
 

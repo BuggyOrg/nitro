@@ -2,6 +2,40 @@ import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { atomicPredecessorsOutPort, atomicSuccessorsInPort } from './atomicWalk'
 
+function getInputPort (graph, input) {
+  if (_.isString(input)) {
+    const node = graph.node(input)
+    const ports = Object.keys(node.inputPorts)
+    if (ports.length === 1) {
+      return {
+        node: input,
+        port: ports[0]
+      }
+    } else {
+      throw new Error('target port could not be selected automatically')
+    }
+  } else {
+    return input
+  }
+}
+
+function getOutputPort (graph, output) {
+  if (_.isString(output)) {
+    const node = graph.node(output)
+    const ports = Object.keys(node.outputPorts)
+    if (ports.length === 1) {
+      return {
+        node: output,
+        port: ports[0]
+      }
+    } else {
+      throw new Error('source port could not be selected automatically')
+    }
+  } else {
+    return output
+  }
+}
+
 export function deleteUnusedPredecessors (graph, node) {
   const nodeValue = graph.node(node)
   Object.keys(nodeValue.inputPorts || {}).forEach((port) => {
@@ -102,6 +136,9 @@ export function unpackCompoundNode (graph, node) {
 }
 
 export function createEdge (graph, source, target) {
+  source = getOutputPort(graph, source)
+  target = getInputPort(graph, target)
+
   const edgeName = `${source.node}@${source.port}_to_${target.node}@${target.node}`
   graph.setEdge(source.node, target.node, {
     outPort: source.port,
