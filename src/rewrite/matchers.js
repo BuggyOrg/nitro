@@ -2,8 +2,8 @@ import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 
 export function any (outputAlias) {
-  return (graph, n) => {
-    return { node: graph.node(n) }
+  return (graph, node) => {
+    return { node }
   }
 }
 
