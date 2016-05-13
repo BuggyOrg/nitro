@@ -24,53 +24,114 @@ export function byIdAndInputs (id, inputs = {}) {
     const node = graph.node(n)
     if (node.id === id) {
       const match = { node: n, inputs: {} }
-      const isMatch = Object.keys(inputs).every((inputPort) => {
-        let predecessors = walk.predecessorOutPort(graph, n, inputPort)
-        if (predecessors.length === 1) {
-          const tryMatchPredecessor = ({node, port}) => {
-            let inputMatcher = inputs[inputPort]
-            if (_.isFunction(inputMatcher)) {
-              const inputMatch = inputMatcher(graph, node)
-              if (inputMatch !== false) {
-                match.inputs[inputPort] = inputMatch
-                match.inputs[inputPort].port = inputPort
+
+      if (_.isArray(inputs)) {
+        let inputPortsLeft = Object.keys(node.inputPorts)
+
+        const isMatch = inputs.every((inputMatcher, index) => {
+          const matchingPort = inputPortsLeft.find((inputPort) => {
+            let predecessors = walk.predecessorOutPort(graph, n, inputPort)
+            if (predecessors.length === 1) {
+              const tryMatchPredecessor = ({node, port}) => {
+                if (_.isFunction(inputMatcher)) {
+                  const inputMatch = inputMatcher(graph, node)
+                  if (inputMatch !== false) {
+                    match.inputs[index] = inputMatch
+                    match.inputs[index].port = inputPort
+                    return true
+                  } else {
+                    return false
+                  }
+                } else {
+                  const inputMatch = inputMatcher.match(graph, node)
+                  if (inputMatch !== false) {
+                    match.inputs[inputMatcher.alias || index] = inputMatch
+                    match.inputs[inputMatcher.alias || index].port = inputPort
+                    return true
+                  } else {
+                    return false
+                  }
+                }
+              }
+
+              const predecessorMatches = predecessors.every(tryMatchPredecessor)
+              if (predecessorMatches) {
                 return true
               } else {
+                while (!graph.node(predecessors[0].node).atomic) {
+                  predecessors = walk.predecessorOutPort(graph, predecessors[0].node, predecessors[0].port)
+                  if (predecessors.length === 1) {
+                    if (predecessors.every(tryMatchPredecessor)) {
+                      return true
+                    }
+                  } else {
+                    return false
+                  }
+                }
                 return false
               }
             } else {
-              const inputMatch = inputMatcher.match(graph, node)
-              if (inputMatch !== false) {
-                match.inputs[inputMatcher.alias || inputPort] = inputMatch
-                match.inputs[inputMatcher.alias || inputPort].port = inputPort
-                return true
-              } else {
-                return false
-              }
+              return false
             }
-          }
+          })
 
-          const predecessorMatches = predecessors.every(tryMatchPredecessor)
-          if (predecessorMatches) {
+          if (typeof matchingPort !== 'undefined') {
+            inputPortsLeft = inputPortsLeft.filter((p) => p !== matchingPort)
             return true
           } else {
-            while (!graph.node(predecessors[0].node).atomic) {
-              predecessors = walk.predecessorOutPort(graph, predecessors[0].node, predecessors[0].port)
-              if (predecessors.length === 1) {
-                if (predecessors.every(tryMatchPredecessor)) {
-                  return true
-                }
-              } else {
-                return false
-              }
-            }
             return false
           }
-        } else {
-          return false
-        }
-      })
-      return isMatch ? match : false
+        })
+        return isMatch ? match : false
+      } else {
+        const isMatch = Object.keys(inputs).every((inputPort) => {
+          let predecessors = walk.predecessorOutPort(graph, n, inputPort)
+          if (predecessors.length === 1) {
+            const tryMatchPredecessor = ({node, port}) => {
+              let inputMatcher = inputs[inputPort]
+              if (_.isFunction(inputMatcher)) {
+                const inputMatch = inputMatcher(graph, node)
+                if (inputMatch !== false) {
+                  match.inputs[inputPort] = inputMatch
+                  match.inputs[inputPort].port = inputPort
+                  return true
+                } else {
+                  return false
+                }
+              } else {
+                const inputMatch = inputMatcher.match(graph, node)
+                if (inputMatch !== false) {
+                  match.inputs[inputMatcher.alias || inputPort] = inputMatch
+                  match.inputs[inputMatcher.alias || inputPort].port = inputPort
+                  return true
+                } else {
+                  return false
+                }
+              }
+            }
+
+            const predecessorMatches = predecessors.every(tryMatchPredecessor)
+            if (predecessorMatches) {
+              return true
+            } else {
+              while (!graph.node(predecessors[0].node).atomic) {
+                predecessors = walk.predecessorOutPort(graph, predecessors[0].node, predecessors[0].port)
+                if (predecessors.length === 1) {
+                  if (predecessors.every(tryMatchPredecessor)) {
+                    return true
+                  }
+                } else {
+                  return false
+                }
+              }
+              return false
+            }
+          } else {
+            return false
+          }
+        })
+        return isMatch ? match : false
+      }
     } else {
       return false
     }
