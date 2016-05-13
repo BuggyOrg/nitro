@@ -172,6 +172,9 @@ export const replaceDeMorganOr = rule(
       'atomic': true,
       'version': '0.1.0'
     })
+    if (graph.node(node).parent != null) {
+      graph.setParent(newAndNode, graph.node(node).parent)
+    }
 
     const newNotNode = `${node}:rewritten:not`
     graph.setNode(newNotNode, {
@@ -185,6 +188,9 @@ export const replaceDeMorganOr = rule(
       'atomic': true,
       'version': '0.1.0'
     })
+    if (graph.node(node).parent != null) {
+      graph.setParent(newNotNode, graph.node(node).parent)
+    }
 
     createEdge(graph, newAndNode, newNotNode)
 
