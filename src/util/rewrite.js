@@ -145,7 +145,7 @@ export function createEdge (graph, source, target) {
   source = getOutputPort(graph, source)
   target = getInputPort(graph, target)
 
-  const edgeName = `${source.node}@${source.port}_to_${target.node}@${target.node}`
+  const edgeName = `${source.node}@${source.port}_to_${target.node}@${target.port}`
   graph.setEdge(source.node, target.node, {
     outPort: source.port,
     inPort: target.port
