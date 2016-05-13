@@ -1,4 +1,5 @@
 import { rule, match, replace } from '../rewrite'
+import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge } from '../../util/rewrite'
 
 export const replaceConstantCalculations = rule(
   match.oneOf(
@@ -88,4 +89,82 @@ export const replaceConstantNumberToString = rule(
       }]
     }
   })
+)
+
+export const rewriteMultipleMultiplication = rule(
+  (graph, node) => {
+    const matcher = match.byIdAndInputs('math/multiply', [
+      match.byIdAndInputs('math/multiply', [
+        match.byIdAndInputs('math/multiply', [ match.any(), match.any() ]),
+        match.any()
+      ]),
+      match.any()
+    ])
+
+    const result = matcher(graph, node)
+    if (result !== false) {
+      const input = result.inputs[1].node
+      if (result.inputs[0].inputs[1].node === input &&
+          result.inputs[0].inputs[0].inputs[0].node === input &&
+          result.inputs[0].inputs[0].inputs[1].node === input) {
+        return result
+      }
+    } else {
+      return false
+    }
+  },
+  (graph, node, match) => {
+    const multiply1 = `${node}:rewritten:m1`
+    graph.setNode(multiply1, {
+      'id': 'math/multiply',
+      'inputPorts': {
+        'm1': 'number',
+        'm2': 'number'
+      },
+      'outputPorts': {
+        'product': 'bool'
+      },
+      'atomic': true,
+      'version': '0.2.0'
+    })
+    if (graph.node(node).parent != null) {
+      graph.setParent(multiply1, graph.node(node).parent)
+    }
+
+    const multiply2 = `${node}:rewritten:m2`
+    graph.setNode(multiply2, {
+      'id': 'math/multiply',
+      'inputPorts': {
+        'm1': 'number',
+        'm2': 'number'
+      },
+      'outputPorts': {
+        'product': 'bool'
+      },
+      'atomic': true,
+      'version': '0.2.0'
+    })
+    if (graph.node(node).parent != null) {
+      graph.setParent(multiply2, graph.node(node).parent)
+    }
+
+    createEdgeFromEachPredecessor(graph,
+      { node: match.inputs[0].inputs[0].node, port: match.inputs[0].inputs[0].inputs[0].port },
+      { node: multiply1, port: 'm1' })
+    createEdgeFromEachPredecessor(graph,
+      { node: match.inputs[0].inputs[0].node, port: match.inputs[0].inputs[0].inputs[0].port },
+      { node: multiply1, port: 'm2' })
+
+    createEdge(graph,
+      multiply1,
+      { node: multiply2, port: 'm1' })
+    createEdge(graph,
+      multiply1,
+      { node: multiply2, port: 'm2' })
+
+    createEdgeToEachSuccessor(graph, multiply2, node)
+
+    deleteUnusedPredecessors(graph, node)
+    graph.removeNode(node)
+  }
 )
