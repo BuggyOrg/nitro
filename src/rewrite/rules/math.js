@@ -1,5 +1,6 @@
 import { rule, match, replace } from '../rewrite'
 import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge } from '../../util/rewrite'
+import { allEqual } from '../../util/check'
 
 export const replaceConstantCalculations = rule(
   match.oneOf(
@@ -103,15 +104,16 @@ export const rewriteMultipleMultiplication = rule(
 
     const result = matcher(graph, node)
     if (result !== false) {
-      const input = result.inputs[1].node
-      if (result.inputs[0].inputs[1].node === input &&
-          result.inputs[0].inputs[0].inputs[0].node === input &&
-          result.inputs[0].inputs[0].inputs[1].node === input) {
+      if (allEqual(
+        result.inputs[1].node,
+        result.inputs[0].inputs[1].node,
+        result.inputs[0].inputs[0].inputs[0].node,
+        result.inputs[0].inputs[0].inputs[1].node
+      )) {
         return result
       }
-    } else {
-      return false
     }
+    return false
   },
   (graph, node, match) => {
     const multiply1 = `${node}:rewritten:m1`
