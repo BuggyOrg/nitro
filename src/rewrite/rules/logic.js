@@ -208,3 +208,46 @@ export const replaceDeMorganOr = rule(
     graph.removeNode(node)
   }
 )
+
+export const replaceInvertedInvertable = rule(
+  match.byIdAndInputs('logic/not', [
+    match.oneOf(
+      match.byIdAndInputs('math/less', [ match.any(), match.any() ])
+    )
+  ]),
+  (graph, node, match) => {
+    const nodeValue = graph.node(match.inputs[0].node)
+
+    if (nodeValue.id === 'math/less') {
+      const newNode = `${match.inputs[0].node}:inverted`
+      graph.setNode(newNode, {
+        'id': 'math/greaterOrEqual',
+        'inputPorts': {
+          'isGreaterOrEqual': 'number',
+          'than': 'number'
+        },
+        'outputPorts': {
+          'value': 'bool'
+        },
+        'atomic': true,
+        'version': '0.1.0'
+      })
+      if (graph.node(node).parent != null) {
+        graph.setParent(newNode, graph.node(node).parent)
+      }
+
+      createEdgeFromEachPredecessor(graph,
+        { node: match.inputs[0].node, port: 'isLess' },
+        { node: newNode, port: 'isGreaterOrEqual' })
+
+      createEdgeFromEachPredecessor(graph,
+        { node: match.inputs[0].node, port: 'than' },
+        { node: newNode, port: 'than' })
+
+      createEdgeToEachSuccessor(graph, newNode, node)
+
+      deleteUnusedPredecessors(graph, node)
+      graph.removeNode(node)
+    }
+  }
+)
