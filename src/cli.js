@@ -35,16 +35,16 @@ getInput
         let first = true
         return (graph) => {
           if (!first) {
-            out.write(',')
+            out.write(',', 'utf8')
           }
-          out.write(JSON.stringify(graph))
+          out.write(JSON.stringify(graph), 'utf8')
           first = false
         }
       })()
 
       let previousGraph
       let newGraph = graphlib.json.write(graph)
-      out.write('[')
+      out.write('[', 'utf8')
       printGraph(newGraph)
       do {
         previousGraph = newGraph
@@ -59,7 +59,7 @@ getInput
         })
         newGraph = graphlib.json.write(graph)
       } while (!_.isEqual(newGraph, previousGraph))
-      out.write(']\n')
+      out.write(']\n', 'utf8')
       if (out !== process.stdout) {
         out.end()
       }
@@ -75,9 +75,9 @@ getInput
       } while (!_.isEqual(newGraph, previousGraph))
 
       if (program.out) {
-        fs.writeFileSync(program.out, JSON.stringify(graphlib.json.write(graph)), 'utf8')
+        fs.writeFileSync(program.out, JSON.stringify(graphlib.json.write(graph)) + '\n', 'utf8')
       } else {
-        process.stdout.write(JSON.stringify(graphlib.json.write(graph)))
+        process.stdout.write(JSON.stringify(graphlib.json.write(graph)) + '\n', 'utf8')
       }
     }
   })
