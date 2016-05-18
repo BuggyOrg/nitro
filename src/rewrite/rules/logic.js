@@ -1,5 +1,5 @@
 import { rule, match, replace } from '../rewrite'
-import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge, setNodeAt } from '../../util/rewrite'
 import { matchInvertableNode, getInvertedNode } from './invertable'
 
 function constantBool (value) {
@@ -110,7 +110,7 @@ export const replaceDeMorganAnd = rule(
   }),
   (graph, node, match) => {
     const newOrNode = `${node}:rewritten:or`
-    graph.setNode(newOrNode, {
+    setNodeAt(graph, newOrNode, node, {
       'id': 'logic/or',
       'inputPorts': {
         'i1': 'bool',
@@ -124,7 +124,7 @@ export const replaceDeMorganAnd = rule(
     })
 
     const newNotNode = `${node}:rewritten:not`
-    graph.setNode(newNotNode, {
+    setNodeAt(graph, newNotNode, node, {
       'id': 'logic/not',
       'inputPorts': {
         'input': 'bool'
@@ -160,7 +160,7 @@ export const replaceDeMorganOr = rule(
   }),
   (graph, node, match) => {
     const newAndNode = `${node}:rewritten:and`
-    graph.setNode(newAndNode, {
+    setNodeAt(graph, newAndNode, node, {
       'id': 'logic/and',
       'inputPorts': {
         'i1': 'bool',
@@ -172,12 +172,9 @@ export const replaceDeMorganOr = rule(
       'atomic': true,
       'version': '0.1.0'
     })
-    if (graph.node(node).parent != null) {
-      graph.setParent(newAndNode, graph.node(node).parent)
-    }
 
     const newNotNode = `${node}:rewritten:not`
-    graph.setNode(newNotNode, {
+    setNodeAt(graph, newNotNode, node, {
       'id': 'logic/not',
       'inputPorts': {
         'input': 'bool'
@@ -188,9 +185,6 @@ export const replaceDeMorganOr = rule(
       'atomic': true,
       'version': '0.1.0'
     })
-    if (graph.node(node).parent != null) {
-      graph.setParent(newNotNode, graph.node(node).parent)
-    }
 
     createEdge(graph, newAndNode, newNotNode)
 
@@ -220,10 +214,7 @@ export const replaceInvertedInvertable = rule(
       const newNode = `${match.inputs[0].node}:inverted`
       const inverted = getInvertedNode(graph, match.inputs[0].node)
 
-      graph.setNode(newNode, inverted.component)
-      if (graph.node(node).parent != null) {
-        graph.setParent(newNode, graph.node(node).parent)
-      }
+      setNodeAt(graph, newNode, match.inputs[0].node, inverted.component)
 
       inverted.inputPorts.forEach(({oldPort, newPort}) => {
         createEdgeFromEachPredecessor(graph,
@@ -252,7 +243,7 @@ export const replaceNegatedAndWithInvertableInputs = rule(
   ]),
   (graph, node, match) => {
     const newOrNode = `${node}:rewritten:or`
-    graph.setNode(newOrNode, {
+    setNodeAt(graph, newOrNode, node, {
       'id': 'logic/or',
       'inputPorts': {
         'i1': 'bool',
@@ -270,10 +261,7 @@ export const replaceNegatedAndWithInvertableInputs = rule(
       const newNode = `${input.node}:inverted`
       const original = input.node
       const inverted = getInvertedNode(graph, original)
-      graph.setNode(newNode, inverted.component)
-      if (graph.node(node).parent != null) {
-        graph.setParent(newNode, graph.node(node).parent)
-      }
+      setNodeAt(graph, newNode, input.node, inverted.component)
       inverted.inputPorts.forEach(({oldPort, newPort}) => {
         createEdgeFromEachPredecessor(graph,
           { node: original, port: oldPort },
@@ -321,10 +309,7 @@ export const replaceNegatedOrWithInvertableInputs = rule(
       const newNode = `${input.node}:inverted`
       const original = input.node
       const inverted = getInvertedNode(graph, original)
-      graph.setNode(newNode, inverted.component)
-      if (graph.node(node).parent != null) {
-        graph.setParent(newNode, graph.node(node).parent)
-      }
+      setNodeAt(graph, newNode, input.node, inverted.component)
       inverted.inputPorts.forEach(({oldPort, newPort}) => {
         createEdgeFromEachPredecessor(graph,
           { node: original, port: oldPort },

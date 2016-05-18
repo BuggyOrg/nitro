@@ -171,6 +171,22 @@ export function createEdgeFromEachPredecessor (graph, source, target) {
 }
 
 /**
+ * Sets the value of the given node in the given graph and sets
+ * the parent to the same value as the contextNode's parent.
+ * @param graph graph
+ * @param node name of the node to set
+ * @param contextNode node whose parent should become the parent of the modified node
+ * @param value value to set the node to
+ */
+export function setNodeAt (graph, node, contextNode, value) {
+  graph.setNode(node, value)
+  const { parent } = graph.node(contextNode)
+  if (parent != null) {
+    graph.setParent(node, parent)
+  }
+}
+
+/**
  * Removes a node and all unused predecessors from a graph.
  * @param graph graph
  * @param node name of the node to remove
