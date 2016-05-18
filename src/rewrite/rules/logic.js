@@ -1,5 +1,6 @@
 import { rule, match, replace } from '../rewrite'
 import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge } from '../../util/rewrite'
+import { matchInvertableNode, getInvertedNode } from './invertable'
 
 function constantBool (value) {
   return {
@@ -152,7 +153,6 @@ export const replaceDeMorganAnd = rule(
   }
 )
 
-
 export const replaceDeMorganOr = rule(
   match.byIdAndInputs('logic/or', {
     i1: match.byIdAndInputs('logic/not', { input: match.any() }),
@@ -211,40 +211,31 @@ export const replaceDeMorganOr = rule(
 
 export const replaceInvertedInvertable = rule(
   match.byIdAndInputs('logic/not', [
-    match.oneOf(
-      match.byIdAndInputs('math/less', [ match.any(), match.any() ])
-    )
+    matchInvertableNode()
   ]),
   (graph, node, match) => {
     const nodeValue = graph.node(match.inputs[0].node)
 
     if (nodeValue.id === 'math/less') {
       const newNode = `${match.inputs[0].node}:inverted`
-      graph.setNode(newNode, {
-        'id': 'math/greaterOrEqual',
-        'inputPorts': {
-          'isGreaterOrEqual': 'number',
-          'than': 'number'
-        },
-        'outputPorts': {
-          'value': 'bool'
-        },
-        'atomic': true,
-        'version': '0.1.0'
-      })
+      const inverted = getInvertedNode(graph, match.inputs[0].node)
+
+      graph.setNode(newNode, inverted.component)
       if (graph.node(node).parent != null) {
         graph.setParent(newNode, graph.node(node).parent)
       }
 
-      createEdgeFromEachPredecessor(graph,
-        { node: match.inputs[0].node, port: 'isLess' },
-        { node: newNode, port: 'isGreaterOrEqual' })
+      inverted.inputPorts.forEach(({oldPort, newPort}) => {
+        createEdgeFromEachPredecessor(graph,
+          { node: match.inputs[0].node, port: oldPort },
+          { node: newNode, port: newPort })
+      })
 
-      createEdgeFromEachPredecessor(graph,
-        { node: match.inputs[0].node, port: 'than' },
-        { node: newNode, port: 'than' })
-
-      createEdgeToEachSuccessor(graph, newNode, node)
+      inverted.outputPorts.forEach(({oldPort, newPort}) => {
+        createEdgeToEachSuccessor(graph,
+          { node: newNode, port: newPort },
+          node)
+      })
 
       deleteUnusedPredecessors(graph, node)
       graph.removeNode(node)
