@@ -26,6 +26,7 @@ export function byIdAndInputs (id, inputs = {}) {
       const match = { node: n, inputs: {} }
 
       if (_.isArray(inputs)) {
+        match.inputs = []
         let inputPortsLeft = Object.keys(node.inputPorts)
 
         const isMatch = inputs.every((inputMatcher, index) => {
