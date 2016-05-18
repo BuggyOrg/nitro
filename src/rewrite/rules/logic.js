@@ -242,3 +242,105 @@ export const replaceInvertedInvertable = rule(
     }
   }
 )
+
+export const replaceNegatedAndWithInvertableInputs = rule(
+  match.byIdAndInputs('logic/not', [
+    match.byIdAndInputs('logic/and', [
+      matchInvertableNode(),
+      matchInvertableNode()
+    ])
+  ]),
+  (graph, node, match) => {
+    const newOrNode = `${node}:rewritten:or`
+    graph.setNode(newOrNode, {
+      'id': 'logic/or',
+      'inputPorts': {
+        'i1': 'bool',
+        'i2': 'bool'
+      },
+      'outputPorts': {
+        'or': 'bool'
+      },
+      'atomic': true,
+      'version': '0.1.0'
+    })
+
+    // add inverted inputs
+    const invertedInputs = match.inputs[0].inputs.map((input, i) => {
+      const newNode = `${input.node}:inverted`
+      const original = input.node
+      const inverted = getInvertedNode(graph, original)
+      graph.setNode(newNode, inverted.component)
+      if (graph.node(node).parent != null) {
+        graph.setParent(newNode, graph.node(node).parent)
+      }
+      inverted.inputPorts.forEach(({oldPort, newPort}) => {
+        createEdgeFromEachPredecessor(graph,
+          { node: original, port: oldPort },
+          { node: newNode, port: newPort })
+      })
+      return newNode
+    })
+
+    // connect the inverted inputs to the or node
+    createEdge(graph, invertedInputs[0], { node: newOrNode, port: 'i1' })
+    createEdge(graph, invertedInputs[1], { node: newOrNode, port: 'i2' })
+
+    // connect the or node to the successors of the not node
+    createEdgeToEachSuccessor(graph, newOrNode, node)
+
+    deleteUnusedPredecessors(graph, node)
+    graph.removeNode(node)
+  }
+)
+
+export const replaceNegatedOrWithInvertableInputs = rule(
+  match.byIdAndInputs('logic/not', [
+    match.byIdAndInputs('logic/or', [
+      matchInvertableNode(),
+      matchInvertableNode()
+    ])
+  ]),
+  (graph, node, match) => {
+    const newAndNode = `${node}:rewritten:and`
+    graph.setNode(newAndNode, {
+      'id': 'logic/and',
+      'inputPorts': {
+        'i1': 'bool',
+        'i2': 'bool'
+      },
+      'outputPorts': {
+        'and': 'bool'
+      },
+      'atomic': true,
+      'version': '0.1.0'
+    })
+
+    // add inverted inputs
+    const invertedInputs = match.inputs[0].inputs.map((input, i) => {
+      const newNode = `${input.node}:inverted`
+      const original = input.node
+      const inverted = getInvertedNode(graph, original)
+      graph.setNode(newNode, inverted.component)
+      if (graph.node(node).parent != null) {
+        graph.setParent(newNode, graph.node(node).parent)
+      }
+      inverted.inputPorts.forEach(({oldPort, newPort}) => {
+        createEdgeFromEachPredecessor(graph,
+          { node: original, port: oldPort },
+          { node: newNode, port: newPort })
+      })
+      return newNode
+    })
+
+    // connect the inverted inputs to the and node
+    createEdge(graph, invertedInputs[0], { node: newAndNode, port: 'i1' })
+    createEdge(graph, invertedInputs[1], { node: newAndNode, port: 'i2' })
+
+    // connect the or node to the successors of the not node
+    createEdgeToEachSuccessor(graph, newAndNode, node)
+
+    deleteUnusedPredecessors(graph, node)
+    graph.removeNode(node)
+  }
+)
