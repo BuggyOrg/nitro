@@ -37,6 +37,19 @@ function getOutputPort (graph, output) {
 }
 
 /**
+ * Sets the value of the given node in the given graph and sets
+ * the parent to the same value as the contextNode's parent.
+ * @param graph graph
+ * @param node name of the node to set
+ * @param contextNode node whose parent should become the parent of the modified node
+ * @param value value to set the node to
+ */
+export function setNodeAt (graph, node, contextNode, value) {
+  graph.setNode(node, value)
+  graph.setParent(node, graph.parent(contextNode))
+}
+
+/**
  * Removes all predecessors of a node that are only used by that
  * node or predecessors of it.
  * @param graph graph
@@ -55,65 +68,16 @@ export function deleteUnusedPredecessors (graph, node) {
 }
 
 /**
- * Replaces a node in a graph and re-connects input and output ports.
- * @param graph graph
- * @param node name of the node to replace
- * @param newValue new value of the node
- * @param portRewrites port rewrite rules, i.e. `{inputPorts: [{oldPort: 'a', newPort: 'b'}], outputPorts: [{oldPort: 'out', newPort: 'result'}]}`
- */
-export function replaceNode (graph, node, newValue, portRewrites) {
-  const newNode = `${node}:rewritten`
-  const oldValue = graph.node(node)
-
-  // create a new node exactly where the old node is
-  newValue.path = oldValue.path
-  newValue.branchPath = oldValue.branchPath
-  newValue.branch = oldValue.branch
-
-  graph.setNode(newNode, newValue)
-  if (oldValue.parent != null) {
-    graph.setParent(newNode, oldValue.parent)
-  }
-
-  // connect input ports
-  ;(portRewrites.inputPorts || []).forEach(({oldPort, newPort}) => {
-    walk.predecessorOutPort(graph, node, oldPort).forEach(n => {
-      const edgeName = `${n.node}@${n.port}_to_${newNode}@${newPort}`
-
-      graph.setEdge(n.node, newNode, {
-        outPort: n.port,
-        inPort: newPort
-      }, edgeName)
-    })
-  })
-
-  // connect output ports
-  ;(portRewrites.outputPorts || []).forEach(({oldPort, newPort}) => {
-    walk.successorInPort(graph, node, oldPort).forEach(n => {
-      const edgeName = `${newNode}@${newPort}_to_${n.node}@${n.port}`
-
-      graph.setEdge(newNode, n.node, {
-        outPort: newPort,
-        inPort: n.port
-      }, edgeName)
-    })
-  })
-
-  graph.removeNode(node)
-}
-
-/**
  * Unpacks and removes a compound node.
  * @param graph graph
  * @param n name of the compound node to unpack
  */
 export function unpackCompoundNode (graph, node) {
-  const nodeValue = graph.node(node)
   let children = graph.children(node)
 
   // move the compound's children one level up (so that the compound can be safely removed)
   children.forEach((c) => {
-    graph.setParent(c, nodeValue.parent)
+    graph.setParent(c, graph.parent(node))
   })
 
   // create new input edges for all edges that previosly used the compound node's input ports
@@ -171,27 +135,40 @@ export function createEdgeFromEachPredecessor (graph, source, target) {
 }
 
 /**
- * Sets the value of the given node in the given graph and sets
- * the parent to the same value as the contextNode's parent.
- * @param graph graph
- * @param node name of the node to set
- * @param contextNode node whose parent should become the parent of the modified node
- * @param value value to set the node to
- */
-export function setNodeAt (graph, node, contextNode, value) {
-  graph.setNode(node, value)
-  const { parent } = graph.node(contextNode)
-  if (parent != null) {
-    graph.setParent(node, parent)
-  }
-}
-
-/**
  * Removes a node and all unused predecessors from a graph.
  * @param graph graph
  * @param node name of the node to remove
  */
 export function deepRemoveNode (graph, node) {
+  deleteUnusedPredecessors(graph, node)
+  graph.removeNode(node)
+}
+
+/**
+ * Replaces a node in a graph and re-connects input and output ports.
+ * @param graph graph
+ * @param node name of the node to replace
+ * @param newValue new value of the node
+ * @param portRewrites port rewrite rules, i.e. `{inputPorts: [{oldPort: 'a', newPort: 'b'}], outputPorts: [{oldPort: 'out', newPort: 'result'}]}`
+ */
+export function replaceNode (graph, node, newValue, portRewrites) {
+  const newNode = `${node}:rewritten`
+  setNodeAt(graph, newNode, node, newValue)
+
+  // connect input ports
+  ;(portRewrites.inputPorts || []).forEach(({oldPort, newPort}) => {
+    walk.predecessorOutPort(graph, node, oldPort).forEach(n => {
+      createEdge(graph, { node: n.node, port: n.port }, { node: newNode, port: newPort })
+    })
+  })
+
+  // connect output ports
+  ;(portRewrites.outputPorts || []).forEach(({oldPort, newPort}) => {
+    walk.successorInPort(graph, node, oldPort).forEach(n => {
+      createEdge(graph, { node: newNode, port: newPort }, { node: n.node, port: n.port })
+    })
+  })
+
   deleteUnusedPredecessors(graph, node)
   graph.removeNode(node)
 }

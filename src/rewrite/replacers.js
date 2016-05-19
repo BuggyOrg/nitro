@@ -4,7 +4,6 @@ import { walk } from '@buggyorg/graphtools'
 export function withNode (nodeCreator) {
   return (graph, node, match) => {
     const newNode = nodeCreator(graph, node, match)
-    deleteUnusedPredecessors(graph, node)
 
     replaceNode(graph, node, newNode.node, {
       inputPorts: newNode.rewriteInputPorts || [],
