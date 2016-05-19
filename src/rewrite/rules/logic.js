@@ -1,19 +1,7 @@
 import { rule, match, replace } from '../rewrite'
 import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge, setNodeAt } from '../../util/rewrite'
 import { matchInvertableNode, getInvertedNode } from './invertable'
-
-function constantBool (value) {
-  return {
-    id: 'math/const',
-    version: '0.2.0',
-    inputPorts: {},
-    outputPorts: { output: 'bool' },
-    atomic: true,
-    path: [],
-    params: { value },
-    name: 'const'
-  }
-}
+import { constantBool } from '../nodes'
 
 export const replaceConstantAnd = rule(
   match.byIdAndInputs('logic/and', { i1: match.constantNode(), i2: match.constantNode() }),
