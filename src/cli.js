@@ -31,30 +31,19 @@ getInput
         out = process.stdout
       }
 
-      const printGraph = (() => {
-        let first = true
-        return (graph) => {
-          if (!first) {
-            out.write(',', 'utf8')
-          }
-          out.write(JSON.stringify(graph), 'utf8')
-          first = false
-        }
-      })()
-
       let previousGraph
       let newGraph = graphlib.json.write(graph)
       out.write('[', 'utf8')
-      printGraph(newGraph)
+      out.write(JSON.stringify({ graph: newGraph }), 'utf8')
       do {
         previousGraph = newGraph
         rewriteFunctions.forEach(f => {
           const graphBeforeRewrite = graphlib.json.write(graph)
-          f(graph)
+          const rule = f(graph)
           const graphAfterRewrite = graphlib.json.write(graph)
 
           if (!_.isEqual(graphBeforeRewrite, graphAfterRewrite)) {
-            printGraph(graphAfterRewrite)
+            out.write(',' + JSON.stringify({ rule, graph: graphAfterRewrite }), 'utf8')
           }
         })
         newGraph = graphlib.json.write(graph)
