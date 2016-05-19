@@ -68,6 +68,65 @@ export function deleteUnusedPredecessors (graph, node) {
 }
 
 /**
+ * Removes all unused predecessors of a node that is not used and that
+ * node itstelf.
+ * @param graph graph
+ * @param node name of the node to remove
+ */
+export function deleteIfUnused (graph, node) {
+  const nodeValue = graph.node(node)
+  if (nodeValue) {
+    // there are valid cases where the node may not exist anymore, i.e. if the
+    // node was a predecessor of multiple input port a replaced node
+    if (_.flatten(Object.keys(nodeValue.outputPorts || {}).map((port) => atomicSuccessorsInPort(graph, node, port))).length === 0) {
+      deleteUnusedPredecessors(graph, node)
+      graph.removeNode(node)
+    }
+  }
+}
+
+/**
+ * Replaces a node in a graph and re-connects input and output ports.
+ * @param graph graph
+ * @param node name of the node to replace
+ * @param newValue new value of the node
+ * @param portRewrites port rewrite rules, i.e. `{inputPorts: [{oldPort: 'a', newPort: 'b'}], outputPorts: [{oldPort: 'out', newPort: 'result'}]}`
+ */
+export function replaceNode (graph, node, newValue, portRewrites) {
+  const newNode = `${node}:rewritten`
+  setNodeAt(graph, newNode, node, newValue)
+
+  // connect input ports
+  ;(portRewrites.inputPorts || []).forEach(({oldPort, newPort}) => {
+    walk.predecessorOutPort(graph, node, oldPort).forEach(n => {
+      const edgeName = `${n.node}@${n.port}_to_${newNode}@${newPort}`
+
+      graph.setEdge(n.node, newNode, {
+        outPort: n.port,
+        inPort: newPort
+      }, edgeName)
+    })
+  })
+
+  // connect output ports
+  ;(portRewrites.outputPorts || []).forEach(({oldPort, newPort}) => {
+    walk.successorInPort(graph, node, oldPort).forEach(n => {
+      const edgeName = `${newNode}@${newPort}_to_${n.node}@${n.port}`
+
+      graph.setEdge(newNode, n.node, {
+        outPort: newPort,
+        inPort: n.port
+      }, edgeName)
+    })
+  })
+
+  const predecessors = _.flatten(Object.keys(graph.node(node).inputPorts || {}).map((port) => atomicPredecessorsOutPort(graph, node, port)))
+  graph.nodeEdges(node).forEach((edge) => graph.removeEdge(edge))
+  predecessors.forEach(({node}) => deleteIfUnused(graph, node))
+  graph.removeNode(node)
+}
+
+/**
  * Unpacks and removes a compound node.
  * @param graph graph
  * @param n name of the compound node to unpack
@@ -140,35 +199,6 @@ export function createEdgeFromEachPredecessor (graph, source, target) {
  * @param node name of the node to remove
  */
 export function deepRemoveNode (graph, node) {
-  deleteUnusedPredecessors(graph, node)
-  graph.removeNode(node)
-}
-
-/**
- * Replaces a node in a graph and re-connects input and output ports.
- * @param graph graph
- * @param node name of the node to replace
- * @param newValue new value of the node
- * @param portRewrites port rewrite rules, i.e. `{inputPorts: [{oldPort: 'a', newPort: 'b'}], outputPorts: [{oldPort: 'out', newPort: 'result'}]}`
- */
-export function replaceNode (graph, node, newValue, portRewrites) {
-  const newNode = `${node}:rewritten`
-  setNodeAt(graph, newNode, node, newValue)
-
-  // connect input ports
-  ;(portRewrites.inputPorts || []).forEach(({oldPort, newPort}) => {
-    walk.predecessorOutPort(graph, node, oldPort).forEach(n => {
-      createEdge(graph, { node: n.node, port: n.port }, { node: newNode, port: newPort })
-    })
-  })
-
-  // connect output ports
-  ;(portRewrites.outputPorts || []).forEach(({oldPort, newPort}) => {
-    walk.successorInPort(graph, node, oldPort).forEach(n => {
-      createEdge(graph, { node: newNode, port: newPort }, { node: n.node, port: n.port })
-    })
-  })
-
   deleteUnusedPredecessors(graph, node)
   graph.removeNode(node)
 }
