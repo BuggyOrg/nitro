@@ -11,4 +11,6 @@ export default function (graph) {
 
   // remove all unneeded compound nodes
   unneededCompoundNodes.forEach((n) => unpackCompoundNode(graph, n))
+
+  return 'cleanup-compounds'
 }
