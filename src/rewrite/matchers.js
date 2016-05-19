@@ -158,3 +158,7 @@ export function constantNode (value, outputAlias) {
     }
   }
 }
+
+export function alias (alias, match) {
+  return { match, alias }
+}

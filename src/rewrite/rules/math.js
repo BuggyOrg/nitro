@@ -1,6 +1,7 @@
 import { rule, match, replace } from '../rewrite'
 import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge } from '../../util/rewrite'
 import { allEqual } from '../../util/check'
+import { constantBool } from '../nodes'
 
 export const replaceConstantCalculations = rule(
   match.oneOf(
@@ -169,4 +170,33 @@ export const rewriteMultipleMultiplication = rule(
     deleteUnusedPredecessors(graph, node)
     graph.removeNode(node)
   }
+)
+
+export const replaceConstantComparison = rule(
+  match.oneOf(
+    match.byIdAndInputs('math/less', { isLess: match.alias('a', match.constantNode()), than: match.alias('b', match.constantNode()) }),
+    match.byIdAndInputs('math/greaterOrEqual', { isGreaterOrEqual: match.alias('a', match.constantNode()), than: match.alias('b', match.constantNode()) })
+  ),
+  replace.withNode((graph, node, match) => {
+    const a = graph.node(match.inputs.a.node).params.value
+    const b = graph.node(match.inputs.b.node).params.value
+    switch (graph.node(match.node).id) {
+      case 'math/less':
+        return {
+          node: constantBool(a < b),
+          rewriteOutputPorts: [{
+            oldPort: 'value',
+            newPort: 'value'
+          }]
+        }
+      case 'math/greaterOrEqual':
+        return {
+          node: constantBool(a >= b),
+          rewriteOutputPorts: [{
+            oldPort: 'value',
+            newPort: 'value'
+          }]
+        }
+    }
+  })
 )
