@@ -186,7 +186,7 @@ export const replaceConstantComparison = rule(
           node: constantBool(a < b),
           rewriteOutputPorts: [{
             oldPort: 'value',
-            newPort: 'value'
+            newPort: 'output'
           }]
         }
       case 'math/greaterOrEqual':
@@ -194,7 +194,7 @@ export const replaceConstantComparison = rule(
           node: constantBool(a >= b),
           rewriteOutputPorts: [{
             oldPort: 'value',
-            newPort: 'value'
+            newPort: 'output'
           }]
         }
     }
