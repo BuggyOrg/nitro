@@ -98,7 +98,7 @@ export function replaceNode (graph, node, newValue, portRewrites) {
 
   // connect input ports
   ;(portRewrites.inputPorts || []).forEach(({oldPort, newPort}) => {
-    walk.predecessorOutPort(graph, node, oldPort).forEach(n => {
+    walk.predecessor(graph, node, oldPort).forEach(n => {
       const edgeName = `${n.node}@${n.port}_to_${newNode}@${newPort}`
 
       graph.setEdge(n.node, newNode, {
@@ -110,7 +110,7 @@ export function replaceNode (graph, node, newValue, portRewrites) {
 
   // connect output ports
   ;(portRewrites.outputPorts || []).forEach(({oldPort, newPort}) => {
-    walk.successorInPort(graph, node, oldPort).forEach(n => {
+    walk.successor(graph, node, oldPort).forEach(n => {
       const edgeName = `${newNode}@${newPort}_to_${n.node}@${n.port}`
 
       graph.setEdge(newNode, n.node, {
@@ -142,7 +142,7 @@ export function unpackCompoundNode (graph, node) {
   // create new input edges for all edges that previosly used the compound node's input ports
   _.flatten(children.map((c) => graph.inEdges(c, node))).forEach((e) => {
     const edge = graph.edge(e)
-    walk.predecessorOutPort(graph, node, edge.outPort).forEach((predecessor) => {
+    walk.predecessor(graph, node, edge.outPort).forEach((predecessor) => {
       graph.setEdge(e.w, predecessor.node, {
         outPort: predecessor.port,
         inPort: edge.inPort
@@ -153,7 +153,7 @@ export function unpackCompoundNode (graph, node) {
   // create new output edges for all edges that previously used the compound node's output ports
   _.flatten(children.map((c) => graph.outEdges(c, node))).forEach((e) => {
     const edge = graph.edge(e)
-    walk.successorInPort(graph, node, edge.inPort).forEach((successor) => {
+    walk.successor(graph, node, edge.inPort).forEach((successor) => {
       graph.setEdge(e.v, successor.node, {
         outPort: edge.outPort,
         inPort: successor.port
@@ -179,7 +179,7 @@ export function createEdgeToEachSuccessor (graph, source, target) {
   source = getOutputPort(graph, source)
   target = getOutputPort(graph, target)
 
-  walk.successorInPort(graph, target.node, target.port).forEach((target) => {
+  walk.successor(graph, target.node, target.port).forEach((target) => {
     createEdge(graph, source, target)
   })
 }
@@ -188,7 +188,7 @@ export function createEdgeFromEachPredecessor (graph, source, target) {
   source = getInputPort(graph, source)
   target = getInputPort(graph, target)
 
-  walk.predecessorOutPort(graph, source.node, source.port).forEach((source) => {
+  walk.predecessor(graph, source.node, source.port).forEach((source) => {
     createEdge(graph, source, target)
   })
 }

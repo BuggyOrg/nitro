@@ -31,7 +31,7 @@ export function byIdAndInputs (id, inputs = {}) {
 
         const isMatch = inputs.every((inputMatcher, index) => {
           const matchingPort = inputPortsLeft.find((inputPort) => {
-            let predecessors = walk.predecessorOutPort(graph, n, inputPort)
+            let predecessors = walk.predecessor(graph, n, inputPort)
             if (predecessors.length === 1) {
               const tryMatchPredecessor = ({node, port}) => {
                 if (_.isFunction(inputMatcher)) {
@@ -60,7 +60,7 @@ export function byIdAndInputs (id, inputs = {}) {
                 return true
               } else {
                 while (!graph.node(predecessors[0].node).atomic) {
-                  predecessors = walk.predecessorOutPort(graph, predecessors[0].node, predecessors[0].port)
+                  predecessors = walk.predecessor(graph, predecessors[0].node, predecessors[0].port)
                   if (predecessors.length === 1) {
                     if (predecessors.every(tryMatchPredecessor)) {
                       return true
@@ -86,7 +86,7 @@ export function byIdAndInputs (id, inputs = {}) {
         return isMatch ? match : false
       } else {
         const isMatch = Object.keys(inputs).every((inputPort) => {
-          let predecessors = walk.predecessorOutPort(graph, n, inputPort)
+          let predecessors = walk.predecessor(graph, n, inputPort)
           if (predecessors.length === 1) {
             const tryMatchPredecessor = ({node, port}) => {
               let inputMatcher = inputs[inputPort]
@@ -116,7 +116,7 @@ export function byIdAndInputs (id, inputs = {}) {
               return true
             } else {
               while (!graph.node(predecessors[0].node).atomic) {
-                predecessors = walk.predecessorOutPort(graph, predecessors[0].node, predecessors[0].port)
+                predecessors = walk.predecessor(graph, predecessors[0].node, predecessors[0].port)
                 if (predecessors.length === 1) {
                   if (predecessors.every(tryMatchPredecessor)) {
                     return true

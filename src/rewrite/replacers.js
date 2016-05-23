@@ -17,8 +17,8 @@ export function removeNode (portRewriter) {
     let rewritePorts = portRewriter(graph, node, match)
 
     rewritePorts.forEach(({ fromPort, toPort }) => {
-      walk.predecessorOutPort(graph, node, fromPort).forEach((source) => {
-        walk.successorInPort(graph, node, toPort).forEach((target) => {
+      walk.predecessor(graph, node, fromPort).forEach((source) => {
+        walk.successor(graph, node, toPort).forEach((target) => {
           const edgeName = `${source.node}@${source.port}_to_${target.node}@${target.node}`
 
           graph.setEdge(source.node, target.node, {
