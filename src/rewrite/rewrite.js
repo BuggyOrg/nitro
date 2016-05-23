@@ -1,8 +1,8 @@
 import * as allMatchers from './matchers'
 import * as allReplacers from './replacers'
 
-export function rule (match, rewrite) {
-  return (graph) => {
+export function rule (match, rewrite, meta) {
+  const rule = (graph) => {
     let nodes = graph.nodes()
     for (let i = 0; i < nodes.length; i++) {
       let m = match(graph, nodes[i])
@@ -12,6 +12,8 @@ export function rule (match, rewrite) {
       }
     }
   }
+  rule.meta = meta
+  return rule
 }
 
 export const match = allMatchers

@@ -5,7 +5,7 @@ function applyAndReturnName (functions) {
   return Object.keys(functions).map((r) =>
     (...args) => {
       functions[r].apply(undefined, args)
-      return r
+      return (functions[r].meta ? functions[r].meta.name : null) || r
     }
   )
 }

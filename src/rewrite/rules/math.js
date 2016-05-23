@@ -30,7 +30,8 @@ export const replaceConstantCalculations = rule(
         newPort: 'output'
       }]
     }
-  })
+  }),
+  { name: 'replace constant calculation' }
 )
 
 export const replaceMultiplicationWithZero = rule(
