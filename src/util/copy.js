@@ -17,6 +17,10 @@ function copyNodeInto (graph, node, target) {
     const target = children[e.w]
     if (source && target) {
       graph.setEdge(source, target, _.cloneDeep(graph.edge(e)), `${e}_${_.uniqueId('copy_')}`)
+    } else if (source && e.w === node) {
+      graph.setEdge(source, nodeCopy, _.cloneDeep(graph.edge(e)), `${e}_${_.uniqueId('copy_')}`)
+    } else if (target && e.v === node) {
+      graph.setEdge(nodeCopy, target, _.cloneDeep(graph.edge(e)), `${e}_${_.uniqueId('copy_')}`)
     }
   })
 
