@@ -1,6 +1,7 @@
 import * as mathRules from './math'
 import * as logicRules from './logic'
 import * as functionalRules from './functional'
+import * as compoundRules from './compounds'
 
 function applyAndReturnName (functions) {
   return Object.keys(functions).map((r) =>
@@ -14,5 +15,6 @@ function applyAndReturnName (functions) {
 export default [
   ...applyAndReturnName(mathRules),
   ...applyAndReturnName(logicRules),
-  ...applyAndReturnName(functionalRules)
+  ...applyAndReturnName(functionalRules),
+  ...applyAndReturnName(compoundRules)
 ]

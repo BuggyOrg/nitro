@@ -6,7 +6,6 @@ import getStdin from 'get-stdin'
 import fs from 'fs'
 import path from 'path'
 import _ from 'lodash'
-import cleanupCompounds from './cleanupCompounds'
 import rewriteRules from './rewrite/rules/index'
 
 program
@@ -21,7 +20,7 @@ let getInput = program.graphfile ? Promise.resolve(fs.readFileSync(program.graph
 getInput
   .then((serializedGraph) => {
     let graph = graphlib.json.read(JSON.parse(serializedGraph))
-    let rewriteFunctions = [ ...rewriteRules, cleanupCompounds ]
+    let rewriteFunctions = [ ...rewriteRules ]
 
     if (program.includeIntermediate) {
       let out
