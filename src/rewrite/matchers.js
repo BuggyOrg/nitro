@@ -110,7 +110,6 @@ export function byIdAndInputs (id, inputs = {}) {
                 }
               }
             }
-
             const predecessorMatches = predecessors.every(tryMatchPredecessor)
             if (predecessorMatches) {
               return true
@@ -156,6 +155,29 @@ export function constantNode (value, outputAlias) {
     } else {
       return false
     }
+  }
+}
+
+export function lambda (options) {
+  return (graph, n) => {
+    const node = graph.node(n)
+
+    if (node.id === 'functional/lambda') {
+      if (typeof options.recursive !== 'undefined') {
+        if ((options.recursive && !node.recursive) ||
+            (!options.recursive && node.recursive)) {
+          return false
+        }
+      }
+      if (typeof options.sideeffects !== 'undefined') {
+        if ((options.sideeffects && !node.sideeffects) ||
+            (!options.sideeffects && node.sideeffects)) {
+          return false
+        }
+      }
+      return { node: n }
+    }
+    return false
   }
 }
 
