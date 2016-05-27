@@ -1,4 +1,4 @@
-import { replaceNode, deleteUnusedPredecessors, createEdgeToEachSuccessor } from '../util/rewrite'
+import { replaceNode, deleteUnusedPredecessors, createEdgeToEachSuccessor, deepRemoveNode } from '../util/rewrite'
 import { walk } from '@buggyorg/graphtools'
 
 export function withNode (nodeCreator) {
@@ -31,8 +31,7 @@ export function removeNode (portRewriter) {
       })
     }
 
-    deleteUnusedPredecessors(graph, node)
-    graph.removeNode(node)
+    deepRemoveNode(graph, node)
   }
 }
 

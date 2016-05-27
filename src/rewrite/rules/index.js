@@ -1,5 +1,6 @@
 import * as mathRules from './math'
 import * as logicRules from './logic'
+import * as functionalRules from './functional'
 
 function applyAndReturnName (functions) {
   return Object.keys(functions).map((r) =>
@@ -12,5 +13,6 @@ function applyAndReturnName (functions) {
 
 export default [
   ...applyAndReturnName(mathRules),
-  ...applyAndReturnName(logicRules)
+  ...applyAndReturnName(logicRules),
+  ...applyAndReturnName(functionalRules)
 ]
