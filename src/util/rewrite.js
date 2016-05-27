@@ -140,7 +140,7 @@ export function unpackCompoundNode (graph, node) {
   })
 
   // create new input edges for all edges that previosly used the compound node's input ports
-  Object.keys(graph.node(node).inputPorts).forEach((port) => {
+  Object.keys(graph.node(node).inputPorts || {}).forEach((port) => {
     walk.predecessor(graph, node, port).forEach((predecessor) => {
       walk.successor(graph, node, port).forEach((successor) => {
         createEdge(graph, predecessor, successor)
@@ -149,7 +149,7 @@ export function unpackCompoundNode (graph, node) {
   })
 
   // create new output edges for all edges that previously used the compound node's output ports
-  Object.keys(graph.node(node).outputPorts).forEach((port) => {
+  Object.keys(graph.node(node).outputPorts || {}).forEach((port) => {
     walk.predecessor(graph, node, port).forEach((predecessor) => {
       walk.successor(graph, node, port).forEach((successor) => {
         createEdge(graph, predecessor, successor)
