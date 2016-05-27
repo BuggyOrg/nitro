@@ -5,7 +5,7 @@ import { atomicPredecessorsOutPort, atomicSuccessorsInPort } from './atomicWalk'
 function getInputPort (graph, input) {
   if (_.isString(input)) {
     const node = graph.node(input)
-    const ports = Object.keys(node.inputPorts)
+    const ports = Object.keys(node.inputPorts || {})
     if (ports.length === 1) {
       return {
         node: input,
@@ -22,7 +22,7 @@ function getInputPort (graph, input) {
 function getOutputPort (graph, output) {
   if (_.isString(output)) {
     const node = graph.node(output)
-    const ports = Object.keys(node.outputPorts)
+    const ports = Object.keys(node.outputPorts || {})
     if (ports.length === 1) {
       return {
         node: output,
@@ -202,4 +202,16 @@ export function deepRemoveNode (graph, node) {
     graph.removeNode(n)
   }
   removeNodeAndChildren(node)
+}
+
+export function moveNodeInto (graph, node, target) {
+  const oldParent = graph.parent(node)
+  graph.setParent(node, target)
+  Object.keys(graph.node(node).inputPorts || {}).forEach((port) => {
+    walk.predecessor(graph, node, port).forEach((predecessor) => {
+      if (graph.parent(predecessor.node) === oldParent) {
+        moveNodeInto(graph, predecessor.node, target)
+      }
+    })
+  })
 }
