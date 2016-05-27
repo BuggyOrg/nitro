@@ -6,8 +6,12 @@ import * as compoundRules from './compounds'
 function applyAndReturnName (functions) {
   return Object.keys(functions).map((r) =>
     (...args) => {
-      functions[r].apply(undefined, args)
-      return (functions[r].meta ? functions[r].meta.name : null) || r
+      const applied = functions[r].apply(undefined, args)
+      if (applied) {
+        return (functions[r].meta ? functions[r].meta.name : null) || r
+      } else {
+        return false
+      }
     }
   )
 }

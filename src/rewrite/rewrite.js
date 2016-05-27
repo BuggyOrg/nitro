@@ -8,9 +8,10 @@ export function rule (match, rewrite, meta) {
       let m = match(graph, nodes[i])
       if (m !== false) {
         rewrite(graph, nodes[i], m)
-        break
+        return true
       }
     }
+    return false
   }
   rule.meta = meta
   return rule

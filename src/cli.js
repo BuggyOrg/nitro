@@ -13,6 +13,7 @@ program
   .option('-f, --graphfile <graph file>', 'Set graph file to parse. If none is given stdin is read')
   .option('-o, --out <graph output file>', 'Set a custom output file. If none is given, stdout is used.')
   .option('-i, --include-intermediate', 'Print an array of all intermediate graphs.')
+  .option('--stats', 'Print stats to stderr after optimizing the graph.')
   .parse(process.argv)
 
 let getInput = program.graphfile ? Promise.resolve(fs.readFileSync(program.graphfile, 'utf8')) : getStdin()
@@ -22,51 +23,59 @@ getInput
     let graph = graphlib.json.read(JSON.parse(serializedGraph))
     let rewriteFunctions = [ ...rewriteRules ]
 
-    if (program.includeIntermediate) {
-      let out
-      if (program.out) {
-        out = fs.createWriteStream(program.out)
-      } else {
-        out = process.stdout
-      }
+    const stats = {
+      initialNodes: graph.nodes().length,
+      initialEdges: graph.edges().length,
+      appliedRules: 0
+    }
 
-      let previousGraph
-      let newGraph = graphlib.json.write(graph)
+    let out
+    if (program.out) {
+      out = fs.createWriteStream(program.out)
+    } else {
+      out = process.stdout
+    }
+
+    let previousGraph
+    let newGraph = graphlib.json.write(graph)
+
+    if (program.includeIntermediate) {
       out.write('[', 'utf8')
       out.write(JSON.stringify({ graph: newGraph }), 'utf8')
-      do {
-        previousGraph = newGraph
-        rewriteFunctions.forEach(f => {
-          const graphBeforeRewrite = graphlib.json.write(graph)
-          const rule = f(graph)
-          const graphAfterRewrite = graphlib.json.write(graph)
+    }
 
-          if (!_.isEqual(graphBeforeRewrite, graphAfterRewrite)) {
-            out.write(',' + JSON.stringify({ rule, graph: graphAfterRewrite }), 'utf8')
+    do {
+      previousGraph = newGraph
+      rewriteFunctions.forEach(f => {
+        const rule = f(graph)
+        if (rule !== false) {
+          stats.appliedRules++
+
+          if (program.includeIntermediate) {
+            out.write(',' + JSON.stringify({ rule, graph: graphlib.json.write(graph) }), 'utf8')
           }
-        })
-        newGraph = graphlib.json.write(graph)
-      } while (!_.isEqual(newGraph, previousGraph))
-      out.write(']\n', 'utf8')
-      if (out !== process.stdout) {
-        out.end()
-      }
-    } else {
-      let previousGraph
-      let newGraph = graphlib.json.write(graph)
-      do {
-        previousGraph = newGraph
-        rewriteFunctions.forEach(f => {
-          f(graph)
-        })
-        newGraph = graphlib.json.write(graph)
-      } while (!_.isEqual(newGraph, previousGraph))
+        }
+      })
+      newGraph = graphlib.json.write(graph)
+    } while (!_.isEqual(newGraph, previousGraph))
 
-      if (program.out) {
-        fs.writeFileSync(program.out, JSON.stringify(graphlib.json.write(graph)) + '\n', 'utf8')
-      } else {
-        process.stdout.write(JSON.stringify(graphlib.json.write(graph)) + '\n', 'utf8')
-      }
+    stats.finalNodes = graph.nodes().length
+    stats.finalEdges = graph.edges().length
+
+    if (program.includeIntermediate) {
+      out.write(']\n', 'utf8')
+    } else {
+      out.write(`${JSON.stringify(newGraph)}\n`, 'utf8')
+    }
+    if (out !== process.stdout) {
+      out.end()
+    }
+
+    if (program.stats) {
+      console.error('\n📈  Statistics:')
+      console.error(`rules applied: ${stats.appliedRules}`)
+      console.error(`nodes: ${stats.finalNodes} (${(stats.finalNodes / stats.initialNodes * 100).toFixed(1)}%), Δ=${stats.finalNodes - stats.initialNodes}`)
+      console.error(`edges: ${stats.finalEdges} (${(stats.finalEdges / stats.initialEdges * 100).toFixed(1)}%), Δ=${stats.finalEdges - stats.initialEdges}`)
     }
   })
   .catch((e) => console.log(e, e.stack.split('\n')))
