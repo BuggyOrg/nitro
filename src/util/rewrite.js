@@ -140,24 +140,20 @@ export function unpackCompoundNode (graph, node) {
   })
 
   // create new input edges for all edges that previosly used the compound node's input ports
-  _.flatten(children.map((c) => graph.inEdges(c, node))).forEach((e) => {
-    const edge = graph.edge(e)
-    walk.predecessor(graph, node, edge.outPort).forEach((predecessor) => {
-      graph.setEdge(e.w, predecessor.node, {
-        outPort: predecessor.port,
-        inPort: edge.inPort
-      }, e.name + '-rewritten')
+  Object.keys(graph.node(node).inputPorts).forEach((port) => {
+    walk.predecessor(graph, node, port).forEach((predecessor) => {
+      walk.successor(graph, node, port).forEach((successor) => {
+        createEdge(graph, predecessor, successor)
+      })
     })
   })
 
   // create new output edges for all edges that previously used the compound node's output ports
-  _.flatten(children.map((c) => graph.outEdges(c, node))).forEach((e) => {
-    const edge = graph.edge(e)
-    walk.successor(graph, node, edge.inPort).forEach((successor) => {
-      graph.setEdge(e.v, successor.node, {
-        outPort: edge.outPort,
-        inPort: successor.port
-      }, e.name + '-rewritten')
+  Object.keys(graph.node(node).outputPorts).forEach((port) => {
+    walk.predecessor(graph, node, port).forEach((predecessor) => {
+      walk.successor(graph, node, port).forEach((successor) => {
+        createEdge(graph, predecessor, successor)
+      })
     })
   })
 
@@ -200,5 +196,10 @@ export function createEdgeFromEachPredecessor (graph, source, target) {
  */
 export function deepRemoveNode (graph, node) {
   deleteUnusedPredecessors(graph, node)
-  graph.removeNode(node)
+
+  const removeNodeAndChildren = (n) => {
+    graph.children(n).forEach((c) => removeNodeAndChildren(c))
+    graph.removeNode(n)
+  }
+  removeNodeAndChildren(node)
 }
