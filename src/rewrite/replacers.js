@@ -14,20 +14,22 @@ export function withNode (nodeCreator) {
 
 export function removeNode (portRewriter) {
   return (graph, node, match) => {
-    let rewritePorts = portRewriter(graph, node, match)
+    if (portRewriter) {
+      let rewritePorts = portRewriter(graph, node, match)
 
-    rewritePorts.forEach(({ fromPort, toPort }) => {
-      walk.predecessor(graph, node, fromPort).forEach((source) => {
-        walk.successor(graph, node, toPort).forEach((target) => {
-          const edgeName = `${source.node}@${source.port}_to_${target.node}@${target.node}`
+      rewritePorts.forEach(({ fromPort, toPort }) => {
+        walk.predecessor(graph, node, fromPort).forEach((source) => {
+          walk.successor(graph, node, toPort).forEach((target) => {
+            const edgeName = `${source.node}@${source.port}_to_${target.node}@${target.node}`
 
-          graph.setEdge(source.node, target.node, {
-            outPort: source.port,
-            inPort: target.port
-          }, edgeName)
+            graph.setEdge(source.node, target.node, {
+              outPort: source.port,
+              inPort: target.port
+            }, edgeName)
+          })
         })
       })
-    })
+    }
 
     deleteUnusedPredecessors(graph, node)
     graph.removeNode(node)
