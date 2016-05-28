@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { atomicPredecessorsOutPort, atomicSuccessorsInPort } from './atomicWalk'
+import { realPredecessors } from './realWalk'
 
 function getInputPort (graph, input) {
   if (_.isString(input)) {
@@ -208,7 +209,7 @@ export function moveNodeInto (graph, node, target) {
   const oldParent = graph.parent(node)
   graph.setParent(node, target)
   Object.keys(graph.node(node).inputPorts || {}).forEach((port) => {
-    walk.predecessor(graph, node, port).forEach((predecessor) => {
+    realPredecessors(graph, node, port).forEach((predecessor) => {
       if (graph.parent(predecessor.node) === oldParent) {
         moveNodeInto(graph, predecessor.node, target)
       }
