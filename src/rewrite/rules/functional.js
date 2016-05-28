@@ -1,6 +1,6 @@
 import { rule, match, replace } from '../rewrite'
 import { copyNode } from '../../util/copy'
-import { createEdge, createEdgeToEachSuccessor, moveNodeInto } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, moveNodeInto } from '../../util/rewrite'
 import { realPredecessors } from '../../util/realWalk'
 
 export const replaceNonRecursiveApply = rule(
@@ -12,7 +12,7 @@ export const replaceNonRecursiveApply = rule(
     const lamdaImpl = copyNode(graph, graph.children(match.inputs.fn.node)[0])
     graph.setParent(lamdaImpl, graph.parent(node))
 
-    createEdge(graph, match.inputs.value.node, lamdaImpl)
+    createEdgeFromEachPredecessor(graph, { node: match.node, port: 'value' }, lamdaImpl)
     createEdgeToEachSuccessor(graph, lamdaImpl, node)
     graph.removeNode(node)
   }
