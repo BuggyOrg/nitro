@@ -209,9 +209,26 @@ export function moveNodeInto (graph, node, target) {
   const oldParent = graph.parent(node)
   graph.setParent(node, target)
   Object.keys(graph.node(node).inputPorts || {}).forEach((port) => {
-    realPredecessors(graph, node, port).forEach((predecessor) => {
-      if (graph.parent(predecessor.node) === oldParent) {
-        moveNodeInto(graph, predecessor.node, target)
+    walk.predecessor(graph, node, port).forEach((predecessor) => {
+      if (graph.parent(node) === predecessor.node) { // this is an input port of a parent node
+        // connect predecessors and successors of that port (the predecessors will be moved in the next step, so that's okay)
+        walk.predecessor(graph, predecessor.node, predecessor.port).forEach((predecessorOfPredecessor) => {
+          createEdgeToEachSuccessor(graph, predecessorOfPredecessor, predecessor)
+        })
+        // remove the original edges of that port
+        graph.nodeEdges(predecessor.node).forEach((e) => {
+          const edge = graph.edge(e)
+          if (edge.inPort === predecessor.port || edge.outPort === predecessor.port) {
+            graph.removeEdge(e)
+          }
+        })
+        // delete the port
+        delete graph.node(predecessor.node).inputPorts[predecessor.port]
+      } else {
+        // real predecessor node
+        if (graph.parent(predecessor.node) === oldParent) {
+          moveNodeInto(graph, predecessor.node, target)
+        }
       }
     })
   })
