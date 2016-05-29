@@ -1,7 +1,6 @@
 import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { atomicPredecessorsOutPort, atomicSuccessorsInPort } from './atomicWalk'
-import { realPredecessors } from './realWalk'
 
 function getInputPort (graph, input) {
   if (_.isString(input)) {
@@ -205,31 +204,38 @@ export function deepRemoveNode (graph, node) {
   removeNodeAndChildren(node)
 }
 
+export function movePredecessorsInto (graph, { node, port }, target) {
+  walk.predecessor(graph, node, port).forEach((predecessor) => {
+    if (graph.parent(node) === predecessor.node) { // this is an input port of a parent node
+      // connect predecessors and successors of that port (the predecessors will be moved in the next step, so that's okay)
+      const predecessors = walk.predecessor(graph, predecessor.node, predecessor.port)
+      predecessors.forEach((predecessorOfPredecessor) => {
+        createEdgeToEachSuccessor(graph, predecessorOfPredecessor, predecessor)
+      })
+      // remove the original edges of that port
+      graph.nodeEdges(predecessor.node).forEach((e) => {
+        const edge = graph.edge(e)
+        if (edge.inPort === predecessor.port || edge.outPort === predecessor.port) {
+          graph.removeEdge(e)
+        }
+      })
+      // delete the port
+      delete graph.node(predecessor.node).inputPorts[predecessor.port]
+
+      // move original predecessors of this node/port (their successors were changed above, but that's okay)
+      predecessors.forEach((predecessor) => {
+        moveNodeInto(graph, predecessor.node, target)
+      })
+    } else {
+      // real predecessor node
+      moveNodeInto(graph, predecessor.node, target)
+    }
+  })
+}
+
 export function moveNodeInto (graph, node, target) {
-  const oldParent = graph.parent(node)
   graph.setParent(node, target)
   Object.keys(graph.node(node).inputPorts || {}).forEach((port) => {
-    walk.predecessor(graph, node, port).forEach((predecessor) => {
-      if (graph.parent(node) === predecessor.node) { // this is an input port of a parent node
-        // connect predecessors and successors of that port (the predecessors will be moved in the next step, so that's okay)
-        walk.predecessor(graph, predecessor.node, predecessor.port).forEach((predecessorOfPredecessor) => {
-          createEdgeToEachSuccessor(graph, predecessorOfPredecessor, predecessor)
-        })
-        // remove the original edges of that port
-        graph.nodeEdges(predecessor.node).forEach((e) => {
-          const edge = graph.edge(e)
-          if (edge.inPort === predecessor.port || edge.outPort === predecessor.port) {
-            graph.removeEdge(e)
-          }
-        })
-        // delete the port
-        delete graph.node(predecessor.node).inputPorts[predecessor.port]
-      } else {
-        // real predecessor node
-        if (graph.parent(predecessor.node) === oldParent) {
-          moveNodeInto(graph, predecessor.node, target)
-        }
-      }
-    })
+    movePredecessorsInto(graph, { node, port }, target)
   })
 }

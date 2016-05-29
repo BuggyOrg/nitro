@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { rule, match, replace } from '../rewrite'
 import { copyNode } from '../../util/copy'
-import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, moveNodeInto } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, movePredecessorsInto } from '../../util/rewrite'
 import { realPredecessors } from '../../util/realWalk'
 
 export const replaceNonRecursiveApply = rule(
@@ -43,7 +43,7 @@ export const replaceNonRecursivePartial = rule(
     return false
   },
   (graph, node, match) => {
-    const valueNode = realPredecessors(graph, node, 'value')[0].node
+    const valueNode = realPredecessors(graph, node, 'value')[0]
 
     const newLambda = copyNode(graph, match.inputs.fn.node)
     graph.setParent(newLambda, graph.parent(node))
@@ -51,7 +51,7 @@ export const replaceNonRecursivePartial = rule(
     createEdgeToEachSuccessor(graph, newLambda, node)
 
     // move value into the new lambda function
-    moveNodeInto(graph, valueNode, graph.children(newLambda)[0])
+    movePredecessorsInto(graph, { node, port: 'value' }, graph.children(newLambda)[0])
 
     // connect the moved value to all places where it is needed
     const newLambdaImpl = graph.children(newLambda)[0]
