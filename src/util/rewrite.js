@@ -58,10 +58,23 @@ export function setNodeAt (graph, node, contextNode, value) {
 export function deleteUnusedPredecessors (graph, node) {
   const nodeValue = graph.node(node)
   Object.keys(nodeValue.inputPorts || {}).forEach((port) => {
-    atomicPredecessorsOutPort(graph, node, port).forEach((predecessor) => {
-      if (atomicSuccessorsInPort(graph, predecessor.node, predecessor.port).length <= 1) {
-        deleteUnusedPredecessors(graph, predecessor.node)
-        graph.removeNode(predecessor.node)
+    walk.predecessor(graph, node, port).forEach((predecessor) => {
+      if (graph.parent(node) === predecessor.node) {
+        // this is an input port of a parent node
+        if (atomicSuccessorsInPort(graph, predecessor.node, predecessor.port).length <= 1) {
+          deleteUnusedPredecessors(graph, predecessor.node)
+        }
+      } else {
+        // real predecessor node
+        if (atomicSuccessorsInPort(graph, predecessor.node, predecessor.port).length <= 1) {
+          deleteUnusedPredecessors(graph, predecessor.node)
+          graph.removeNode(predecessor.node)
+        }
+      }
+
+      if (walk.successor(graph, node, port).length <= 1 &&
+          walk.predecessor(graph, node, port).length === 0) {
+        delete nodeValue.inputPorts[port]
       }
     })
   })
@@ -120,9 +133,7 @@ export function replaceNode (graph, node, newValue, portRewrites) {
     })
   })
 
-  const predecessors = _.flatten(Object.keys(graph.node(node).inputPorts || {}).map((port) => atomicPredecessorsOutPort(graph, node, port)))
-  graph.nodeEdges(node).forEach((edge) => graph.removeEdge(edge))
-  predecessors.forEach(({node}) => deleteIfUnused(graph, node))
+  deleteUnusedPredecessors(graph, node)
   graph.removeNode(node)
 }
 
