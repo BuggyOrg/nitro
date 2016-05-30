@@ -32,6 +32,14 @@ export const replaceFalseAnd = rule(
   })
 )
 
+export const replaceAndWithTrue = rule(
+  match.byIdAndInputs('logic/and', [ match.constantNode(true), match.any() ]),
+  replace.removeNode((graph, node, match) => [{
+    fromPort: match.inputs[1].port,
+    toPort: Object.keys(graph.node(node).outputPorts)[0]
+  }])
+)
+
 export const replaceConstantOr = rule(
   match.byIdAndInputs('logic/or', { i1: match.constantNode(), i2: match.constantNode() }),
   replace.withNode((graph, node, match) => {
@@ -59,6 +67,14 @@ export const replaceTrueOr = rule(
       }]
     }
   })
+)
+
+export const replaceOrWithFalse = rule(
+  match.byIdAndInputs('logic/or', [ match.constantNode(false), match.any() ]),
+  replace.removeNode((graph, node, match) => [{
+    fromPort: match.inputs[1].port,
+    toPort: Object.keys(graph.node(node).outputPorts)[0]
+  }])
 )
 
 export const replaceConstantNot = rule(
