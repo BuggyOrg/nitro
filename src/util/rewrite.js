@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
-import { atomicPredecessorsOutPort, atomicSuccessorsInPort } from './atomicWalk'
+import { atomicSuccessorsInPort } from './atomicWalk'
 
 function getInputPort (graph, input) {
   if (_.isString(input)) {
