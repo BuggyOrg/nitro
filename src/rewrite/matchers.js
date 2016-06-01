@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
+import { realPredecessors } from '../util/realWalk'
 
 export function any (outputAlias) {
   return (graph, node) => {
@@ -192,4 +193,22 @@ export function sink (matcher = any()) {
 
 export function alias (alias, match) {
   return { match, alias }
+}
+
+export function movable (matcher = any()) {
+  return (graph, node) => {
+    const parent = graph.parent(node)
+    const isMoveable = (graph, node) => {
+      return graph.parent(node) === parent &&
+             _.flatten(Object.keys(graph.node(node).outputPorts).map((port) => walk.successor(graph, node, port))).length === 1 && // TODO if the branch has no side-effects, we could copy it and the number of successors of a node could be more than one
+             Object.keys(graph.node(node).inputPorts || {}).every((port) => {
+               return realPredecessors(graph, node, port).every(({node}) => isMoveable(graph, node))
+             })
+    }
+    if (isMoveable(graph, node)) {
+      return matcher(graph, node)
+    } else {
+      return false
+    }
+  }
 }

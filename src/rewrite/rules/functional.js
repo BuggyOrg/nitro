@@ -21,27 +21,10 @@ export const replaceNonRecursiveApply = rule(
 )
 
 export const replaceNonRecursivePartial = rule(
-  (graph, node) => {
-    const m = match.byIdAndInputs('functional/partial', {
-      fn: match.lambda({ recursive: false, sideeffects: false }),
-      value: match.any()
-    })(graph, node)
-
-    if (m !== false) {
-      const parent = graph.parent(m.inputs.value.node)
-      const isMoveable = (graph, node) => {
-        return graph.parent(node) === parent &&
-               _.flatten(Object.keys(graph.node(node).outputPorts).map((port) => walk.successor(graph, node, port))).length === 1 && // TODO if the branch has no side-effects, we could copy it and the number of successors of a node could be more than one
-               Object.keys(graph.node(node).inputPorts || {}).every((port) => {
-                 return realPredecessors(graph, node, port).every(({node}) => isMoveable(graph, node))
-               })
-      }
-      if (isMoveable(graph, m.inputs.value.node)) {
-        return m
-      }
-    }
-    return false
-  },
+  match.byIdAndInputs('functional/partial', {
+    fn: match.lambda({ recursive: false, sideeffects: false }),
+    value: match.movable(match.any())
+  }),
   (graph, node, match) => {
     const valueNode = realPredecessors(graph, node, 'value')[0]
 
