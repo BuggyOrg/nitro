@@ -5,7 +5,7 @@ import { atomicSuccessorsInPort } from './atomicWalk'
 function getInputPort (graph, input) {
   if (_.isString(input)) {
     const node = graph.node(input)
-    const ports = Object.keys(node.inputPorts)
+    const ports = Object.keys(node.inputPorts || {})
     if (ports.length === 1) {
       return {
         node: input,
@@ -22,7 +22,7 @@ function getInputPort (graph, input) {
 function getOutputPort (graph, output) {
   if (_.isString(output)) {
     const node = graph.node(output)
-    const ports = Object.keys(node.outputPorts)
+    const ports = Object.keys(node.outputPorts || {})
     if (ports.length === 1) {
       return {
         node: output,
@@ -151,7 +151,7 @@ export function unpackCompoundNode (graph, node) {
   })
 
   // create new input edges for all edges that previosly used the compound node's input ports
-  Object.keys(graph.node(node).inputPorts).forEach((port) => {
+  Object.keys(graph.node(node).inputPorts || {}).forEach((port) => {
     walk.predecessor(graph, node, port).forEach((predecessor) => {
       walk.successor(graph, node, port).forEach((successor) => {
         createEdge(graph, predecessor, successor)
@@ -160,7 +160,7 @@ export function unpackCompoundNode (graph, node) {
   })
 
   // create new output edges for all edges that previously used the compound node's output ports
-  Object.keys(graph.node(node).outputPorts).forEach((port) => {
+  Object.keys(graph.node(node).outputPorts || {}).forEach((port) => {
     walk.predecessor(graph, node, port).forEach((predecessor) => {
       walk.successor(graph, node, port).forEach((successor) => {
         createEdge(graph, predecessor, successor)
@@ -213,4 +213,40 @@ export function deepRemoveNode (graph, node) {
     graph.removeNode(n)
   }
   removeNodeAndChildren(node)
+}
+
+export function movePredecessorsInto (graph, { node, port }, target) {
+  walk.predecessor(graph, node, port).forEach((predecessor) => {
+    if (graph.parent(node) === predecessor.node) { // this is an input port of a parent node
+      // connect predecessors and successors of that port (the predecessors will be moved in the next step, so that's okay)
+      const predecessors = walk.predecessor(graph, predecessor.node, predecessor.port)
+      predecessors.forEach((predecessorOfPredecessor) => {
+        createEdgeToEachSuccessor(graph, predecessorOfPredecessor, predecessor)
+      })
+      // remove the original edges of that port
+      graph.nodeEdges(predecessor.node).forEach((e) => {
+        const edge = graph.edge(e)
+        if (edge.inPort === predecessor.port || edge.outPort === predecessor.port) {
+          graph.removeEdge(e)
+        }
+      })
+      // delete the port
+      delete graph.node(predecessor.node).inputPorts[predecessor.port]
+
+      // move original predecessors of this node/port (their successors were changed above, but that's okay)
+      predecessors.forEach((predecessor) => {
+        moveNodeInto(graph, predecessor.node, target)
+      })
+    } else {
+      // real predecessor node
+      moveNodeInto(graph, predecessor.node, target)
+    }
+  })
+}
+
+export function moveNodeInto (graph, node, target) {
+  graph.setParent(node, target)
+  Object.keys(graph.node(node).inputPorts || {}).forEach((port) => {
+    movePredecessorsInto(graph, { node, port }, target)
+  })
 }
