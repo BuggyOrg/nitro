@@ -159,7 +159,7 @@ export function constantNode (value, outputAlias) {
   }
 }
 
-export function lambda (options) {
+export function lambda (options = {}) {
   return (graph, n) => {
     const node = graph.node(n)
 
