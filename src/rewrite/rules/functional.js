@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { rule, match, replace } from '../rewrite'
 import { copyNode } from '../../util/copy'
-import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, movePredecessorsInto } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, movePredecessorsInto, deepRemoveNode } from '../../util/rewrite'
 import { realPredecessors } from '../../util/realWalk'
 
 export const replaceNonRecursiveApply = rule(
@@ -57,4 +57,20 @@ export const replaceNonRecursivePartial = rule(
 export const removeUnusedLambda = rule(
   match.sink(match.byIdAndInputs('functional/lambda')),
   replace.removeNode()
+)
+
+export const replacePartialPartial = rule(
+  match.byIdAndInputs('functional/partial', {
+    fn: match.lambda(),
+    value: match.byIdAndInputs('functional/partial', {
+      fn: match.lambda(),
+      value: match.any()
+    })
+  }),
+  (graph, node, match) => {
+    const newLambda = copyNode(graph, graph.children(match.inputs.value.inputs.fn.node)[0])
+    graph.setParent(newLambda, graph.children(match.inputs.fn.node)[0])
+
+    //deepRemoveNode(graph, match.inputs.value.node)
+  }
 )
