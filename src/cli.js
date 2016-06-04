@@ -52,7 +52,7 @@ getInput
           stats.appliedRules++
 
           if (program.includeIntermediate) {
-            out.write(',' + JSON.stringify({ rule, graph: graphlib.json.write(graph) }), 'utf8')
+            out.write(',' + JSON.stringify({ transition: { label: rule }, graph: graphlib.json.write(graph) }), 'utf8')
           }
         }
       })
