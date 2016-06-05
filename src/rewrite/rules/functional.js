@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { rule, match, replace } from '../rewrite'
 import { copyNode } from '../../util/copy'
-import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, movePredecessorsInto, deepRemoveNode } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, movePredecessorsInto, deepRemoveNode, createEdge } from '../../util/rewrite'
 import { realPredecessors } from '../../util/realWalk'
 
 export const replaceNonRecursiveApply = rule(
@@ -61,16 +61,39 @@ export const removeUnusedLambda = rule(
 
 export const replacePartialPartial = rule(
   match.byIdAndInputs('functional/partial', {
-    fn: match.lambda(),
+    fn: match.lambda({ inputPorts: 1 }),
     value: match.byIdAndInputs('functional/partial', {
-      fn: match.lambda(),
+      fn: match.lambda({ outputPorts: 1 }),
       value: match.any()
     })
   }),
   (graph, node, match) => {
-    const newLambda = copyNode(graph, graph.children(match.inputs.value.inputs.fn.node)[0])
-    graph.setParent(newLambda, graph.children(match.inputs.fn.node)[0])
+    const inputFnImpl = graph.children(match.inputs.fn.node)[0]
 
-    //deepRemoveNode(graph, match.inputs.value.node)
+    const newLambda = copyNode(graph, graph.children(match.inputs.value.inputs.fn.node)[0])
+    graph.setParent(newLambda, inputFnImpl)
+
+    const partialTargetPort = Object.keys(graph.node(inputFnImpl).inputPorts)[graph.node(node).params.partial]
+    createEdgeToEachSuccessor(graph, newLambda, { node: inputFnImpl, port: partialTargetPort })
+
+    // re-use the now unused input port for the previously partial-ed input
+    createEdge(graph,
+      { node: graph.children(match.inputs.fn.node)[0], port: Object.keys(graph.node(graph.children(match.inputs.fn.node)[0]).inputPorts)[0] },
+      { node: newLambda, port: Object.keys(graph.node(newLambda).inputPorts)[graph.node(match.inputs.value.node).params.partial] }
+    )
+    graph.node(graph.children(match.inputs.fn.node)[0]).inputPorts[Object.keys(graph.node(graph.children(match.inputs.fn.node)[0]).inputPorts)[0]] = graph.node(newLambda).inputPorts[Object.keys(graph.node(newLambda).inputPorts)[graph.node(match.inputs.value.node).params.partial]]
+
+    // re-connect the value of the matched partial
+    createEdgeToEachSuccessor(graph, walk.predecessor(graph, match.inputs.value.node, 'value')[0], match.inputs.value.node)
+
+    // remove old edge
+    graph.nodeEdges(inputFnImpl).forEach((e) => {
+      const edge = graph.edge(e)
+      if (edge && (edge.inPort === partialTargetPort)) {
+        graph.removeEdge(e)
+      }
+    })
+
+    deepRemoveNode(graph, match.inputs.value.node)
   }
 )
