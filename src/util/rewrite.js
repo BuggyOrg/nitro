@@ -62,12 +62,12 @@ export function deleteUnusedPredecessors (graph, node) {
       if (graph.parent(node) === predecessor.node) {
         // this is an input port of a parent node
         if (atomicSuccessorsInPort(graph, predecessor.node, predecessor.port).length <= 1) {
-          deleteUnusedPredecessors(graph, predecessor.node)
+          deepRemoveNode(graph, predecessor.node)
         }
       } else {
         // real predecessor node
         if (atomicSuccessorsInPort(graph, predecessor.node, predecessor.port).length <= 1) {
-          deleteUnusedPredecessors(graph, predecessor.node)
+          deepRemoveNode(graph, predecessor.node)
           graph.removeNode(predecessor.node)
         }
       }
