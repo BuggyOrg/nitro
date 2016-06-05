@@ -226,7 +226,7 @@ export function movePredecessorsInto (graph, { node, port }, target) {
       // remove the original edges of that port
       graph.nodeEdges(predecessor.node).forEach((e) => {
         const edge = graph.edge(e)
-        if (edge.inPort === predecessor.port || edge.outPort === predecessor.port) {
+        if (edge && (edge.inPort === predecessor.port || edge.outPort === predecessor.port)) {
           graph.removeEdge(e)
         }
       })
