@@ -164,6 +164,7 @@ export function lambda (options = {}) {
     const node = graph.node(n)
 
     if (node.id === 'functional/lambda') {
+      const implNode = graph.node(graph.children(n)[0])
       if (typeof options.recursive !== 'undefined') {
         if ((options.recursive && !node.recursive) ||
             (!options.recursive && node.recursive)) {
@@ -173,6 +174,16 @@ export function lambda (options = {}) {
       if (typeof options.sideeffects !== 'undefined') {
         if ((options.sideeffects && !node.sideeffects) ||
             (!options.sideeffects && node.sideeffects)) {
+          return false
+        }
+      }
+      if (typeof options.inputPorts !== 'undefined') {
+        if (Object.keys(implNode.inputPorts).length !== options.inputPorts) {
+          return false
+        }
+      }
+      if (typeof options.outputPorts !== 'undefined') {
+        if (Object.keys(implNode.outputPorts).length !== options.outputPorts) {
           return false
         }
       }
