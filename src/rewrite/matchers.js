@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { realPredecessors } from '../util/realWalk'
+import { atomicSuccessorsInPort } from '../util/atomicWalk'
 
 export function any (outputAlias) {
   return (graph, node) => {
@@ -32,7 +33,7 @@ export function byIdAndInputs (id, inputs = {}) {
 
         const isMatch = inputs.every((inputMatcher, index) => {
           const matchingPort = inputPortsLeft.find((inputPort) => {
-            let predecessors = walk.predecessor(graph, n, inputPort)
+            let predecessors = realPredecessors(graph, n, inputPort)
             if (predecessors.length === 1) {
               const tryMatchPredecessor = ({node, port}) => {
                 if (_.isFunction(inputMatcher)) {
@@ -61,7 +62,7 @@ export function byIdAndInputs (id, inputs = {}) {
                 return true
               } else {
                 while (!graph.node(predecessors[0].node).atomic) {
-                  predecessors = walk.predecessor(graph, predecessors[0].node, predecessors[0].port)
+                  predecessors = realPredecessors(graph, predecessors[0].node, predecessors[0].port)
                   if (predecessors.length === 1) {
                     if (predecessors.every(tryMatchPredecessor)) {
                       return true
@@ -87,7 +88,7 @@ export function byIdAndInputs (id, inputs = {}) {
         return isMatch ? match : false
       } else {
         const isMatch = Object.keys(inputs).every((inputPort) => {
-          let predecessors = walk.predecessor(graph, n, inputPort)
+          let predecessors = realPredecessors(graph, n, inputPort)
           if (predecessors.length === 1) {
             const tryMatchPredecessor = ({node, port}) => {
               let inputMatcher = inputs[inputPort]
@@ -116,7 +117,7 @@ export function byIdAndInputs (id, inputs = {}) {
               return true
             } else {
               while (!graph.node(predecessors[0].node).atomic) {
-                predecessors = walk.predecessor(graph, predecessors[0].node, predecessors[0].port)
+                predecessors = realPredecessors(graph, predecessors[0].node, predecessors[0].port)
                 if (predecessors.length === 1) {
                   if (predecessors.every(tryMatchPredecessor)) {
                     return true
@@ -211,9 +212,9 @@ export function movable (matcher = any()) {
     const parent = graph.parent(node)
     const isMoveable = (graph, node) => {
       return graph.parent(node) === parent &&
-             _.flatten(Object.keys(graph.node(node).outputPorts).map((port) => walk.successor(graph, node, port))).length === 1 && // TODO if the branch has no side-effects, we could copy it and the number of successors of a node could be more than one
+             _.flattenDeep(Object.keys(graph.node(node).outputPorts).map((port) => atomicSuccessorsInPort(graph, node, port))).length === 1 && // TODO if the branch has no side-effects, we could copy it and the number of successors of a node could be more than one
              Object.keys(graph.node(node).inputPorts || {}).every((port) => {
-               return realPredecessors(graph, node, port).every(({node}) => isMoveable(graph, node))
+               return walk.predecessor(graph, node, port).every(({node}) => isMoveable(graph, node))
              })
     }
     if (isMoveable(graph, node)) {
