@@ -63,7 +63,7 @@ export const replacePartialPartial = rule(
   match.byIdAndInputs('functional/partial', {
     fn: match.lambda(),
     value: match.byIdAndInputs('functional/partial', {
-      fn: match.lambda({ outputPorts: 1 }),
+      fn: match.lambda({ outputPorts: 1, inputPorts: 1 }),
       value: match.any()
     })
   }),
