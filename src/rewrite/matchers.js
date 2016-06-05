@@ -167,8 +167,8 @@ export function lambda (options = {}) {
     if (node.id === 'functional/lambda') {
       const implNode = graph.node(graph.children(n)[0])
       if (typeof options.recursive !== 'undefined') {
-        if ((options.recursive && !node.recursive) ||
-            (!options.recursive && node.recursive)) {
+        if ((options.recursive && !(node.settings && node.settings.recursive)) ||
+            (!options.recursive && (node.settings && node.settings.recursive))) {
           return false
         }
       }
