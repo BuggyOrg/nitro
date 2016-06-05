@@ -9,6 +9,7 @@ export const removeUnnecessaryCompoundNodes = rule(
     if (node &&
         !node.recursive &&
         !node.atomic &&
+        node.id !== 'functional/lambda' &&
         !(parent && parent.id === 'functional/lambda')) {
         // Object.keys(node.inputPorts || {}).every((p) => walk.predecessor(graph, n, p).length > 0) &&
         // Object.keys(node.outputPorts || {}).every((p) => walk.successor(graph, n, p).length > 0)) {
