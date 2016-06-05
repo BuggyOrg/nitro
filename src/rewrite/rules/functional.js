@@ -61,7 +61,7 @@ export const removeUnusedLambda = rule(
 
 export const replacePartialPartial = rule(
   match.byIdAndInputs('functional/partial', {
-    fn: match.lambda({ inputPorts: 1 }),
+    fn: match.lambda(),
     value: match.byIdAndInputs('functional/partial', {
       fn: match.lambda({ outputPorts: 1 }),
       value: match.any()
