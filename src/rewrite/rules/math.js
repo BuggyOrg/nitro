@@ -1,6 +1,7 @@
 import { rule, match, replace } from '../rewrite'
-import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge, moveNodeInto, removeEdge } from '../../util/rewrite'
 import { allEqual } from '../../util/check'
+import { copyNode } from '../../util/copy'
 import { constantBool } from '../nodes'
 
 export const replaceConstantCalculations = rule(
@@ -201,3 +202,31 @@ export const replaceConstantComparison = rule(
     }
   })
 )
+
+export const bubbleUpConstant = ['math/add', 'math/multiply', 'logic/and', 'logic/or'].map((operation) => rule(
+  match.byIdAndInputs(operation, [
+    match.alias('operation', match.movable(match.byIdAndInputs(operation, [ match.alias('constant', match.constantNode()), match.alias('x', match.movable()) ]))),
+    match.alias('constant', match.constantNode())
+  ]),
+  (graph, node, match) => {
+    // swap match.inputs.operation.inputs.x and match.inputs.constant
+
+    // copy the constant to the location of 'x'
+    const copiedConstant = copyNode(graph, match.inputs.constant.node)
+    graph.setParent(copiedConstant, graph.parent(match.inputs.operation.inputs.x.node))
+
+    // move x
+    moveNodeInto(graph, match.inputs.operation.inputs.x.node, graph.parent(match.inputs.constant.node))
+    graph.nodeEdges(match.inputs.operation.inputs.x.node).forEach((e) => graph.removeEdge(e))
+
+    // create new edges
+    createEdge(graph, copiedConstant, { node: match.inputs.operation.node, port: match.inputs.operation.inputs.x.port })
+    createEdge(graph, match.inputs.operation.inputs.x.node, { node: match.node, port: match.inputs.constant.port })
+
+    // cleanup
+    removeEdge(graph, match.inputs.constant.node, { node: match.node, port: match.inputs.constant.port })
+    if (graph.successors(match.inputs.constant.node).length === 0) {
+      graph.removeNode(match.inputs.constant.node)
+    }
+  }
+))

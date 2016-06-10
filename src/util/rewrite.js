@@ -250,3 +250,14 @@ export function moveNodeInto (graph, node, target) {
     movePredecessorsInto(graph, { node, port }, target)
   })
 }
+
+export function removeEdge (graph, source, target) {
+  source = getOutputPort(graph, source)
+  target = getInputPort(graph, target)
+  graph.nodeEdges(source.node).forEach((e) => {
+    const edge = graph.edge(e)
+    if (edge && e.v === source.node && e.w === target.node && edge.outPort === source.port && edge.inPort === target.port) {
+      graph.removeEdge(e)
+    }
+  })
+}
