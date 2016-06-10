@@ -224,3 +224,21 @@ export function movable (matcher = any()) {
     }
   }
 }
+
+/**
+ * A matcher for development that wraps an existing matcher and only matches once.
+ */
+export function once (matcher) {
+  let matched = false
+  return (graph, node) => {
+    if (matched) {
+      return false
+    } else {
+      let match = matcher(graph, node)
+      if (match !== false) {
+        matched = true
+      }
+      return match
+    }
+  }
+}
