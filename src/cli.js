@@ -5,8 +5,8 @@ import graphlib from 'graphlib'
 import getStdin from 'get-stdin'
 import fs from 'fs'
 import path from 'path'
-import _ from 'lodash'
 import rewriteRules from './rewrite/rules/index'
+import { applyRules } from './rewrite/index'
 
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '/../package.json')))['version'])
@@ -23,12 +23,6 @@ getInput
     let graph = graphlib.json.read(JSON.parse(serializedGraph))
     let rewriteFunctions = [ ...rewriteRules ]
 
-    const stats = {
-      initialNodes: graph.nodes().length,
-      initialEdges: graph.edges().length,
-      appliedRules: 0
-    }
-
     let out
     if (program.out) {
       out = fs.createWriteStream(program.out)
@@ -36,31 +30,16 @@ getInput
       out = process.stdout
     }
 
-    let previousGraph
-    let newGraph = graphlib.json.write(graph)
-
     if (program.includeIntermediate) {
       out.write('[', 'utf8')
-      out.write(JSON.stringify({ graph: newGraph }), 'utf8')
+      out.write(JSON.stringify({ graph: graphlib.json.write(graph) }), 'utf8')
     }
 
-    do {
-      previousGraph = newGraph
-      rewriteFunctions.forEach(f => {
-        const rule = f(graph)
-        if (rule !== false) {
-          stats.appliedRules++
-
-          if (program.includeIntermediate) {
-            out.write(',' + JSON.stringify({ transition: { label: rule }, graph: graphlib.json.write(graph) }), 'utf8')
-          }
-        }
-      })
-      newGraph = graphlib.json.write(graph)
-    } while (!_.isEqual(newGraph, previousGraph))
-
-    stats.finalNodes = graph.nodes().length
-    stats.finalEdges = graph.edges().length
+    const { newGraph, stats } = applyRules(graph, rewriteFunctions, {
+      onRuleApplied: program.includeIntermediate ? (rule, graph) => {
+        out.write(',' + JSON.stringify({ transition: { label: rule }, graph: graphlib.json.write(graph) }), 'utf8')
+      } : null
+    })
 
     if (program.includeIntermediate) {
       out.write(']\n', 'utf8')
