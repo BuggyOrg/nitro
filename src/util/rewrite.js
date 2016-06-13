@@ -261,3 +261,15 @@ export function removeEdge (graph, source, target) {
     }
   })
 }
+
+export function removePort (graph, n, port) {
+  const node = graph.node(n)
+  graph.nodeEdges(n).forEach((e) => {
+    const edge = graph.edge(e)
+    if (edge.outPort === port && e.v === n ||
+        edge.inPort === port && e.w === n) {
+      graph.removeEdge(e)
+    }
+  })
+  delete node.inputPorts[port]
+}
