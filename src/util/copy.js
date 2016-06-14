@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-function copyNodeInto (graph, node, target) {
+export function copyNodeInto (graph, node, target) {
   const nodeCopy = `${node}_${_.uniqueId('copy_')}`
   const newNodeValue = _.cloneDeep(graph.node(node))
 

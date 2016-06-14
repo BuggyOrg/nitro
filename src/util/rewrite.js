@@ -273,3 +273,25 @@ export function removePort (graph, n, port) {
   })
   delete node.inputPorts[port]
 }
+
+export function createInputPort (graph, n, port, type) {
+  const node = graph.node(n)
+  if (!node.inputPorts) {
+    node.inputPorts = {}
+  }
+  node.inputPorts[port] = type
+  // TODO add the new port to argumentOrdering
+}
+
+export function createOutputPort (graph, n, port, type) {
+  const node = graph.node(n)
+  if (!node.outputPorts) {
+    node.outputPorts = {}
+  }
+  node.outputPorts[port] = type
+  // TODO add the new port to argumentOrdering
+}
+
+export function tryGetInputPort (graph, n, port) {
+  return (graph.node(n).inputPorts || {})[port]
+}

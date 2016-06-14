@@ -1,6 +1,8 @@
 import { walk } from '@buggyorg/graphtools'
 import _ from 'lodash'
 import { childrenDeep } from '../../../util/graph'
+import { createEdge, createInputPort, createOutputPort, tryGetInputPort } from '../../../util/rewrite'
+import { copyNodeInto } from '../../../util/copy'
 
 /**
  * Checks if the given node is a tail-recursive compound node.
@@ -23,7 +25,7 @@ export function matchTailRecursiveCompound (graph, n) {
     return walk.predecessor(graph, node, port).map((p) => {
       const predecessor = graph.node(p.node)
       if (predecessor.id === 'logic/mux') {
-        predicates.push(walk.predecessor(graph, p, 'control')[0])
+        predicates.push(walk.predecessor(graph, p.node, 'control')[0])
         return [walkMuxChain(p.node, 'input1'), walkMuxChain(p.node, 'input2')]
       } else if (predecessor.id === compoundNode.id) {
         return p.node
@@ -42,10 +44,73 @@ export function matchTailRecursiveCompound (graph, n) {
   })) {
     return {
       node: n,
-      predicates: _.uniq(predicates),
+      predicates: _.uniqBy(predicates, 'node'),
       tailcalls: _.uniq(tailcalls)
     }
   } else {
     return false
   }
+}
+
+/**
+ * Puts a the given node into a lambda function and returns that lambda function. The specified
+ * port will be connected to the lambda function's output port.
+ */
+export function extractIntoLambda (graph, trNode, { node, port }) {
+  const lambda = `${node}_${_.uniqueId('copy_')}`
+  graph.setNode(lambda, { id: 'functional/lambda' }) // TODO
+  graph.setParent(lambda, graph.parent(trNode))
+
+  const lambdaImpl = `${lambda}:impl`
+  graph.setNode(lambdaImpl, { id: lambdaImpl })
+  graph.setParent(lambdaImpl, lambda)
+
+  // now walk up `node` until `trNode` is reached and copy everything into the lambda function
+  let nodeMappings = {}
+
+  const copyNodeIntoLambda = (node) => {
+    if (!nodeMappings[node] && node !== trNode) {
+      nodeMappings[node] = copyNodeInto(graph, node, lambdaImpl)
+      Object.keys(graph.node(node).inputPorts).forEach((port) => {
+        walk.predecessor(graph, node, port).forEach((predecessor) => {
+          const newPredecessor = copyNodeIntoLambda(predecessor.node)
+          if (newPredecessor) {
+            createEdge(graph, { node: newPredecessor, port: predecessor.port }, { node: nodeMappings[node], port })
+          } else {
+            // predecessor not copied, so it is a input port of the recursive function, so we make it an
+            // input port of the new lamba function, if it doesn't exist, yet
+            if (!tryGetInputPort(graph, lambdaImpl, predecessor.port)) {
+              createInputPort(graph, lambdaImpl, predecessor.port, graph.node(node).inputPorts[port])
+              createEdge(graph, { node: lambdaImpl, port: predecessor.port }, { node: nodeMappings[node], port })
+            }
+          }
+        })
+      })
+    }
+    return nodeMappings[node]
+  }
+
+  const newNode = copyNodeIntoLambda(node)
+  if (newNode) {
+    createOutputPort(graph, lambdaImpl, port, graph.node(node).outputPorts[port])
+    createEdge(graph, { node: newNode, port }, { node: lambdaImpl, port })
+  } else {
+    // the edge went straight from input to the recursive call
+    createInputPort(graph, lambdaImpl, port, graph.node(node).inputPorts[port])
+    createOutputPort(graph, lambdaImpl, `${port}_out`, graph.node(node).inputPorts[port])
+    createEdge(graph, { node: lambdaImpl, port }, { node: lambdaImpl, port: `${port}_out` })
+  }
+
+  return lambda
+}
+
+export function rewriteTailRecursionToLoop (graph, node, match) {
+  const predicateLambdas = match.predicates.map((predicate) => {
+    return extractIntoLambda(graph, node, predicate)
+  })
+  const calculateParameters = _.flattenDeep(match.tailcalls.map((tailcall) => {
+    return Object.keys(graph.node(tailcall).inputPorts).map((port) => {
+      return extractIntoLambda(graph, node, walk.predecessor(graph, tailcall, port)[0])
+    })
+  }))
 }
