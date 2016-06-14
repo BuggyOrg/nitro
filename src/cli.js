@@ -35,7 +35,7 @@ getInput
       out.write(JSON.stringify({ graph: graphlib.json.write(graph) }), 'utf8')
     }
 
-    const { newGraph, stats } = applyRules(graph, rewriteFunctions, {
+    const result = applyRules(graph, rewriteFunctions, {
       onRuleApplied: program.includeIntermediate ? (rule, graph) => {
         out.write(',' + JSON.stringify({ transition: { label: rule }, graph: graphlib.json.write(graph) }), 'utf8')
       } : null
@@ -44,13 +44,14 @@ getInput
     if (program.includeIntermediate) {
       out.write(']\n', 'utf8')
     } else {
-      out.write(`${JSON.stringify(newGraph)}\n`, 'utf8')
+      out.write(`${JSON.stringify(graphlib.json.write(result.graph))}\n`, 'utf8')
     }
     if (out !== process.stdout) {
       out.end()
     }
 
     if (program.stats) {
+      const { stats } = result
       console.error('\n📈  Statistics:')
       console.error(`rules applied: ${stats.appliedRules}`)
       console.error(`nodes: ${stats.finalNodes} (${(stats.finalNodes / stats.initialNodes * 100).toFixed(1)}%), Δ=${stats.finalNodes - stats.initialNodes}`)
