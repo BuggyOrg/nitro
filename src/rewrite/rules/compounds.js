@@ -3,6 +3,7 @@ import { unpackCompoundNode, moveNodeInto, createEdge, removePort } from '../../
 import { rule, match } from '../rewrite'
 import { childrenDeep, isSamePort } from '../../util/graph'
 import { realPredecessors } from '../../util/realWalk'
+import { matchTailRecursiveCompound } from './tailrecursion'
 
 export const removeUnnecessaryCompoundNodes = rule(
   (graph, n) => {
@@ -59,4 +60,12 @@ export const moveInputsIntoRecursiveCompounds = rule(
     recursiveCalls.forEach((call) => removePort(graph, call, constantInputPort))
   },
   { name: 'move constant input into recursive compound' }
+)
+
+export const tailRecursionToLoop = rule(
+  matchTailRecursiveCompound,
+  (graph, node, match) => {
+    // TODO
+    // console.error(`${node} is tail-recursive!`)
+  }
 )
