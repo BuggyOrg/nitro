@@ -31,6 +31,9 @@ export const moveInputsIntoRecursiveCompounds = rule(
     if (node && !node.atomic) {
       // check if all recursive calls (and the initial call) have the same input at one port (and if this input can be moved)
       const recursiveCalls = childrenDeep(graph, n).filter((c) => graph.node(c).id === node.id)
+      if (recursiveCalls.length === 0) {
+        return false
+      }
       const constantInputPort = Object.keys(node.inputPorts).find((port) => {
         const predecessor = realPredecessors(graph, n, port)
         return predecessor.length === 1 && match.movable()(graph, predecessor[0].node) &&
