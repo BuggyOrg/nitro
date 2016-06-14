@@ -104,13 +104,31 @@ export function extractIntoLambda (graph, trNode, { node, port }) {
   return lambda
 }
 
+/**
+ * Adds all input ports of the given reference node to the given node, if they don't exist yet.
+ */
+function ensureInputPorts (graph, node, referenceNode) {
+  Object.keys(graph.node(referenceNode).inputPorts).forEach((port) => {
+    if (!graph.node(node).inputPorts[port]) {
+      createInputPort(graph, node, port, graph.node(referenceNode).inputPorts[port])
+    }
+  })
+}
+
 export function rewriteTailRecursionToLoop (graph, node, match) {
   const predicateLambdas = match.predicates.map((predicate) => {
-    return extractIntoLambda(graph, node, predicate)
+    let lambda = extractIntoLambda(graph, node, predicate)
+    const lambdaImpl = graph.children(lambda)[0]
+    ensureInputPorts(graph, lambdaImpl, node)
+    return lambda
   })
+
   const calculateParameters = _.flattenDeep(match.tailcalls.map((tailcall) => {
     return Object.keys(graph.node(tailcall).inputPorts).map((port) => {
-      return extractIntoLambda(graph, node, walk.predecessor(graph, tailcall, port)[0])
+      let lambda = extractIntoLambda(graph, node, walk.predecessor(graph, tailcall, port)[0])
+      const lambdaImpl = graph.children(lambda)[0]
+      ensureInputPorts(graph, lambdaImpl, node)
+      return lambda
     })
   }))
 }
