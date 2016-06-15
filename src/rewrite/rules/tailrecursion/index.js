@@ -69,7 +69,7 @@ export function matchTailRecursiveCompound (graph, n) {
  */
 export function extractIntoLambda (graph, trNode, { node, port }) {
   const lambda = `${node}_${_.uniqueId('copy_')}`
-  graph.setNode(lambda, { id: 'functional/lambda' }) // TODO
+  graph.setNode(lambda, { id: 'functional/lambda', outputPorts: { fn: 'lambda' } }) // TODO
   graph.setParent(lambda, graph.parent(trNode))
 
   const lambdaImpl = `${lambda}:impl`
@@ -206,6 +206,7 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
   graph.setNode(tailrecNode, {
     id: 'tailrec',
     atomic: true,
+    specialForm: true,
     outputPorts: _.clone(graph.node(node).outputPorts)
   })
   graph.setParent(tailrecNode, graph.parent(node))
@@ -220,14 +221,28 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
     createInputPort(graph, tailrecNode, `initial_${port}`, graph.node(node).inputPorts[port])
   })
 
+  // connect initial input
   Object.keys(graph.node(node).inputPorts).forEach((port) => {
     createEdgeFromEachPredecessor(graph, { node, port }, { node: tailrecNode, port: `initial_${port}` })
   })
+  // connect output
   createEdgeToEachSuccessor(graph, tailrecNode, node)
 
-  deepRemoveNode(graph, node)
+  // connect the predicates and parameter generators
+  predicateLambdas.forEach((predicate, i) => {
+    createEdge(graph, predicate.lambda.control, { node: tailrecNode, port: `p_${i}` })
+    if (predicate.lambda.input1) {
+      createEdge(graph, predicate.lambda.input1, { node: tailrecNode, port: `f_${i + 1}` })
+    } else if (predicate.lambda.input2) {
+      createEdge(graph, predicate.lambda.input2, { node: tailrecNode, port: `f_${i + 1}` })
+    }
 
-  console.error(JSON.stringify(calculateParameters))
-  //console.error(JSON.stringify(predicateLambdas))
-  //console.error(JSON.stringify(calculateParameters))
+    if (predicate.predicate.input1.isTailcall) {
+      createEdge(graph, calculateParameters[predicate.predicate.input1.predecessor.node], { node: tailrecNode, port: `f_${i}` })
+    } else if (predicate.predicate.input2.isTailcall) {
+      createEdge(graph, calculateParameters[predicate.predicate.input2.predecessor.node], { node: tailrecNode, port: `f_${i}` })
+    }
+  })
+
+  deepRemoveNode(graph, node)
 }
