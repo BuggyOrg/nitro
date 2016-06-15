@@ -1,7 +1,7 @@
 import { walk } from '@buggyorg/graphtools'
 import _ from 'lodash'
 import { childrenDeep } from '../../../util/graph'
-import { createEdge, createInputPort, createOutputPort, tryGetInputPort } from '../../../util/rewrite'
+import { createEdge, createInputPort, createOutputPort, tryGetInputPort, moveNodeInto, unpackCompoundNode, createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deepRemoveNode } from '../../../util/rewrite'
 import { copyNodeInto } from '../../../util/copy'
 
 /**
@@ -25,7 +25,18 @@ export function matchTailRecursiveCompound (graph, n) {
     return walk.predecessor(graph, node, port).map((p) => {
       const predecessor = graph.node(p.node)
       if (predecessor.id === 'logic/mux') {
-        predicates.push(walk.predecessor(graph, p.node, 'control')[0])
+        const predicate = {
+          control: walk.predecessor(graph, p.node, 'control')[0],
+          input1: { predecessor: walk.predecessor(graph, p.node, 'input1')[0] },
+          input2: { predecessor: walk.predecessor(graph, p.node, 'input2')[0] }
+        }
+        predicate.input1.type = graph.node(predicate.input1.predecessor.node).id
+        predicate.input1.isTailcall = predicate.input1.type === compoundNode.id && predicate.input1.predecessor.port === Object.keys(compoundNode.outputPorts)[0]
+        predicate.input2.type = graph.node(predicate.input2.predecessor.node).id
+        predicate.input2.isTailcall = predicate.input2.type === compoundNode.id && predicate.input2.predecessor.port === Object.keys(compoundNode.outputPorts)[0]
+
+        predicates.push(predicate)
+
         return [walkMuxChain(p.node, 'input1'), walkMuxChain(p.node, 'input2')]
       } else if (predecessor.id === compoundNode.id) {
         return p.node
@@ -115,20 +126,108 @@ function ensureInputPorts (graph, node, referenceNode) {
   })
 }
 
-export function rewriteTailRecursionToLoop (graph, node, match) {
-  const predicateLambdas = match.predicates.map((predicate) => {
-    let lambda = extractIntoLambda(graph, node, predicate)
+/**
+ * Adds all output ports of the given reference node to the given node, if they don't exist yet.
+ */
+function ensureOutputPorts (graph, node, referenceNode) {
+  Object.keys(graph.node(referenceNode).outputPorts).forEach((port) => {
+    if (!graph.node(node).outputPorts[port]) {
+      createOutputPort(graph, node, port, graph.node(referenceNode).outputPorts[port])
+    }
+  })
+}
+
+/**
+ * Merges the given lambda functions.
+ */
+function mergeLambdas (graph, lambdaFunctions) {
+  const firstLambda = _.head(lambdaFunctions)
+  const firstLambdaImpl = graph.children(firstLambda)[0]
+
+  _.tail(lambdaFunctions).forEach((lambda) => {
     const lambdaImpl = graph.children(lambda)[0]
-    ensureInputPorts(graph, lambdaImpl, node)
-    return lambda
+    moveNodeInto(graph, lambdaImpl, firstLambdaImpl)
+
+    Object.keys(graph.node(lambdaImpl).inputPorts).forEach((port) => {
+      createEdge(graph, { node: firstLambdaImpl, port }, { node: lambdaImpl, port })
+    })
+    Object.keys(graph.node(lambdaImpl).outputPorts).forEach((port) => {
+      ensureOutputPorts(graph, firstLambdaImpl, lambdaImpl)
+      createEdge(graph, { node: lambdaImpl, port }, { node: firstLambdaImpl, port })
+    })
+    unpackCompoundNode(graph, lambdaImpl)
+    graph.removeNode(lambda)
   })
 
-  const calculateParameters = _.flattenDeep(match.tailcalls.map((tailcall) => {
+  return firstLambda
+}
+
+export function rewriteTailRecursionToLoop (graph, node, match) {
+  const predicateLambdas = match.predicates.map((predicate) => {
+    const controlLambda = extractIntoLambda(graph, node, predicate.control)
+    ensureInputPorts(graph, graph.children(controlLambda)[0], node)
+
+    let input1Lambda
+    if (predicate.input1.type !== 'logic/mux' && !predicate.input1.isTailcall) {
+      input1Lambda = extractIntoLambda(graph, node, predicate.input1.predecessor)
+      ensureInputPorts(graph, graph.children(input1Lambda)[0], node)
+    }
+    let input2Lambda
+    if (predicate.input2.type !== 'logic/mux' && !predicate.input2.isTailcall) {
+      input2Lambda = extractIntoLambda(graph, node, predicate.input2.predecessor)
+      ensureInputPorts(graph, graph.children(input2Lambda)[0], node)
+    }
+
+    return {
+      predicate,
+      lambda: {
+        control: controlLambda,
+        input1: input1Lambda,
+        input2: input2Lambda
+      }
+    }
+  })
+
+  let calculateParameters = _.flattenDeep(match.tailcalls.map((tailcall) => {
     return Object.keys(graph.node(tailcall).inputPorts).map((port) => {
       let lambda = extractIntoLambda(graph, node, walk.predecessor(graph, tailcall, port)[0])
       const lambdaImpl = graph.children(lambda)[0]
       ensureInputPorts(graph, lambdaImpl, node)
-      return lambda
+      return { tailcall, lambda, port }
     })
   }))
+
+  calculateParameters = _.mapValues(_.groupBy(calculateParameters, 'tailcall'), (parameterLambdas) =>
+    mergeLambdas(graph, parameterLambdas.map((p) => p.lambda)) // merge parameter lambdas that belong to the same tail call
+  )
+  // calculateParameters now maps the tail call nodes to lambda functions that calculate the parameters for them
+
+  const tailrecNode = `${node}_tailrec`
+  graph.setNode(tailrecNode, {
+    id: 'tailrec',
+    atomic: true,
+    outputPorts: _.clone(graph.node(node).outputPorts)
+  })
+  graph.setParent(tailrecNode, graph.parent(node))
+
+  // create `2 * n + 1 + p` input ports (n predicates, n if/elseif-cases, one final else-case and p initial values for the parameters)
+  _.range(match.predicates.length).forEach((i) => {
+    createInputPort(graph, tailrecNode, `p_${i}`, 'function')
+    createInputPort(graph, tailrecNode, `f_${i}`, 'function')
+  })
+  createInputPort(graph, tailrecNode, `f_${match.predicates.length}`, 'function')
+  Object.keys(graph.node(node).inputPorts).forEach((port) => {
+    createInputPort(graph, tailrecNode, `initial_${port}`, graph.node(node).inputPorts[port])
+  })
+
+  Object.keys(graph.node(node).inputPorts).forEach((port) => {
+    createEdgeFromEachPredecessor(graph, { node, port }, { node: tailrecNode, port: `initial_${port}` })
+  })
+  createEdgeToEachSuccessor(graph, tailrecNode, node)
+
+  deepRemoveNode(graph, node)
+
+  console.error(JSON.stringify(calculateParameters))
+  //console.error(JSON.stringify(predicateLambdas))
+  //console.error(JSON.stringify(calculateParameters))
 }
