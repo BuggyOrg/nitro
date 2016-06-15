@@ -292,6 +292,36 @@ export function createOutputPort (graph, n, port, type) {
   // TODO add the new port to argumentOrdering
 }
 
+/**
+ * Renames a port of a node.
+ * @param graph a graphlib graph
+ * @param n a node name
+ * @param port the old port name
+ * @param newName the new port name
+ */
+export function renamePort (graph, n, port, newName) {
+  const node = graph.node(n)
+  if (node.inputPorts[port]) {
+    node.inputPorts[newName] = node.inputPorts[port]
+    delete node.inputPorts[port]
+  } else {
+    node.outputPorts[newName] = node.outputPorts[port]
+    delete node.outputPorts[port]
+  }
+  if (node.argumentOrdering) {
+    node.argumentOrdering = node.argumentOrdering.filter((arg) => arg === port ? newName : arg)
+  }
+
+  graph.nodeEdges(n).forEach((e) => {
+    const edge = graph.edge(e)
+    if (e.v === n && edge.inPort === port) {
+      edge.inPort = newName
+    } else if (e.w === n && edge.outPort === port) {
+      edge.outPort = newName
+    }
+  })
+}
+
 export function tryGetInputPort (graph, n, port) {
   return (graph.node(n).inputPorts || {})[port]
 }
