@@ -3,11 +3,17 @@ import { walk } from '@buggyorg/graphtools'
 
 /**
  * Gets the actual predecessor nodes of the given node (and not parent nodes).
+ * If `options.crossRecursiveBoundaries` is set to true, this method will not cross boundaries
+ * of recursive compound nodes and return no predecessors instead.
  */
-export function realPredecessors (graph, node, port) {
+export function realPredecessors (graph, node, port, options = { crossRecursiveBoundaries: false }) {
   return _.flatten(walk.predecessor(graph, node, port).map((predecessor) => {
     if (graph.parent(node) === predecessor.node) {
-      return realPredecessors(graph, predecessor.node, predecessor.port)
+      if (options.crossRecursiveBoundaries || !graph.node(predecessor.node).recursiveRoot) {
+        return realPredecessors(graph, predecessor.node, predecessor.port)
+      } else {
+        return []
+      }
     } else {
       return predecessor
     }
