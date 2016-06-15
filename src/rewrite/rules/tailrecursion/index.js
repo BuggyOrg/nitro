@@ -1,7 +1,8 @@
 import { walk } from '@buggyorg/graphtools'
 import _ from 'lodash'
 import { childrenDeep } from '../../../util/graph'
-import { createEdge, createInputPort, createOutputPort, tryGetInputPort, moveNodeInto, unpackCompoundNode, createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deepRemoveNode } from '../../../util/rewrite'
+import { createEdge, createInputPort, createOutputPort, tryGetInputPort, moveNodeInto, unpackCompoundNode,
+         createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deepRemoveNode, renamePort } from '../../../util/rewrite'
 import { copyNodeInto } from '../../../util/copy'
 
 /**
@@ -168,14 +169,39 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
     ensureInputPorts(graph, graph.children(controlLambda)[0], node)
 
     let input1Lambda
+    let input1LambdaRelevantPort
     if (predicate.input1.type !== 'logic/mux' && !predicate.input1.isTailcall) {
       input1Lambda = extractIntoLambda(graph, node, predicate.input1.predecessor)
-      ensureInputPorts(graph, graph.children(input1Lambda)[0], node)
+      const input1LambdaImpl = graph.children(input1Lambda)[0]
+      ensureInputPorts(graph, input1LambdaImpl, node)
+
+      renamePort(graph, input1LambdaImpl, Object.keys(graph.node(graph.children(input1Lambda)[0]).outputPorts)[0], `${predicate.input1.predecessor.port}_new`)
+      input1LambdaRelevantPort = predicate.input1.predecessor.port
+
+      _.forOwn(graph.node(input1LambdaImpl).inputPorts, (type, port) => {
+        if (!graph.node(input1LambdaImpl).outputPorts[`${port}_new`]) {
+          createOutputPort(graph, input1LambdaImpl, `${port}_new`, type)
+          createEdge(graph, { node: input1LambdaImpl, port: port }, { node: input1LambdaImpl, port: `${port}_new` })
+        }
+      })
     }
+
     let input2Lambda
+    let input2LambdaRelevantPort
     if (predicate.input2.type !== 'logic/mux' && !predicate.input2.isTailcall) {
       input2Lambda = extractIntoLambda(graph, node, predicate.input2.predecessor)
-      ensureInputPorts(graph, graph.children(input2Lambda)[0], node)
+      const input2LambdaImpl = graph.children(input2Lambda)[0]
+      ensureInputPorts(graph, input2LambdaImpl, node)
+
+      renamePort(graph, graph.children(input2Lambda)[0], Object.keys(graph.node(graph.children(input2Lambda)[0]).outputPorts)[0], `${predicate.input2.predecessor.port}_new`)
+      input2LambdaRelevantPort = predicate.input2.predecessor.port
+
+      _.forOwn(graph.node(input2LambdaImpl).inputPorts, (type, port) => {
+        if (!graph.node(input2LambdaImpl).outputPorts[`${port}_new`]) {
+          createOutputPort(graph, input2LambdaImpl, `${port}_new`, type)
+          createEdge(graph, { node: input2LambdaImpl, port: port }, { node: input2LambdaImpl, port: `${port}_new` })
+        }
+      })
     }
 
     return {
@@ -183,7 +209,9 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
       lambda: {
         control: controlLambda,
         input1: input1Lambda,
-        input2: input2Lambda
+        input1RelevantPort: input1LambdaRelevantPort,
+        input2: input2Lambda,
+        input2RelevantPort: input2LambdaRelevantPort
       }
     }
   })
@@ -238,8 +266,10 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
     createEdge(graph, predicate.lambda.control, { node: tailrecNode, port: `p_${i}` })
     if (predicate.lambda.input1) {
       createEdge(graph, predicate.lambda.input1, { node: tailrecNode, port: `f_${i + 1}` })
+      graph.node(tailrecNode).tailrecConfig.returnPort = predicate.lambda.input1RelevantPort
     } else if (predicate.lambda.input2) {
       createEdge(graph, predicate.lambda.input2, { node: tailrecNode, port: `f_${i + 1}` })
+      graph.node(tailrecNode).tailrecConfig.returnPort = predicate.lambda.input2RelevantPort
     }
 
     if (predicate.predicate.input1.isTailcall) {
