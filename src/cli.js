@@ -58,4 +58,7 @@ getInput
       console.error(`edges: ${stats.finalEdges} (${(stats.finalEdges / stats.initialEdges * 100).toFixed(1)}%), Δ=${stats.finalEdges - stats.initialEdges}`)
     }
   })
-  .catch((e) => console.log(e, e.stack.split('\n')))
+  .catch((e) => {
+    console.error(e, e.stack.split('\n'))
+    process.exit(1)
+  })
