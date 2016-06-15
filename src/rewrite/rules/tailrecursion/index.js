@@ -207,7 +207,12 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
     id: 'tailrec',
     atomic: true,
     specialForm: true,
-    outputPorts: _.clone(graph.node(node).outputPorts)
+    outputPorts: _.clone(graph.node(node).outputPorts),
+    tailrecConfig: {
+      tailcalls: [],
+      inputPorts: Object.keys(graph.node(node).inputPorts),
+      predicateCount: match.predicates.length
+    }
   })
   graph.setParent(tailrecNode, graph.parent(node))
 
@@ -239,8 +244,10 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
 
     if (predicate.predicate.input1.isTailcall) {
       createEdge(graph, calculateParameters[predicate.predicate.input1.predecessor.node], { node: tailrecNode, port: `f_${i}` })
+      graph.node(tailrecNode).tailrecConfig.tailcalls.push(`f_${i}`)
     } else if (predicate.predicate.input2.isTailcall) {
       createEdge(graph, calculateParameters[predicate.predicate.input2.predecessor.node], { node: tailrecNode, port: `f_${i}` })
+      graph.node(tailrecNode).tailrecConfig.tailcalls.push(`f_${i}`)
     }
   })
 
