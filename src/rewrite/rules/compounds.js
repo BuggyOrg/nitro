@@ -5,8 +5,6 @@ import { childrenDeep, isSamePort } from '../../util/graph'
 import { realPredecessors } from '../../util/realWalk'
 import { matchTailRecursiveCompound, rewriteTailRecursionToLoop } from './tailrecursion'
 
-// TODO un-comment this rule
-/*
 export const removeUnnecessaryCompoundNodes = rule(
   (graph, n) => {
     const node = graph.node(n)
@@ -27,7 +25,6 @@ export const removeUnnecessaryCompoundNodes = rule(
   (graph, node) => unpackCompoundNode(graph, node),
   { name: 'remove unnecessary compound' }
 )
-*/
 
 export const moveInputsIntoRecursiveCompounds = rule(
   (graph, n) => {
