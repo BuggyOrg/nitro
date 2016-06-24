@@ -217,7 +217,13 @@ export const bubbleUpConstant = ['math/add', 'math/multiply', 'logic/and', 'logi
 
     // move x
     moveNodeInto(graph, match.inputs.operation.inputs.x.node, graph.parent(match.inputs.constant.node))
-    graph.nodeEdges(match.inputs.operation.inputs.x.node).forEach((e) => graph.removeEdge(e))
+    graph.nodeEdges(match.inputs.operation.inputs.x.node).forEach((e) => {
+      if (e.v === match.inputs.operation.inputs.x.node &&
+          e.w === match.inputs.operation.node &&
+          graph.edge(e).inPort === match.inputs.operation.inputs.x.port) {
+        graph.removeEdge(e)
+      }
+    })
 
     // create new edges
     createEdge(graph, copiedConstant, { node: match.inputs.operation.node, port: match.inputs.operation.inputs.x.port })
