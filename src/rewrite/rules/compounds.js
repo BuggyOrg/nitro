@@ -11,7 +11,7 @@ export const removeUnnecessaryCompoundNodes = rule(
     const parent = graph.node(graph.parent(n))
     if (node &&
         !(node.settings && (node.settings.recursive || node.settings.recursesTo)) &&
-        !node.recursive && !node.recursesTo && // TODO temporary fix, this line can be removed later
+        !node.recursive && !node.recursesTo && !node.recursiveRoot && // TODO temporary fix, this line can be removed later
         !node.atomic &&
         node.id !== 'functional/lambda' &&
         !(parent && parent.id === 'functional/lambda')) {
