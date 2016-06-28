@@ -57,22 +57,7 @@ export function byIdAndInputs (id, inputs = {}) {
                 }
               }
 
-              const predecessorMatches = predecessors.every(tryMatchPredecessor)
-              if (predecessorMatches) {
-                return true
-              } else {
-                while (!graph.node(predecessors[0].node).atomic) {
-                  predecessors = realPredecessors(graph, predecessors[0].node, predecessors[0].port)
-                  if (predecessors.length === 1) {
-                    if (predecessors.every(tryMatchPredecessor)) {
-                      return true
-                    }
-                  } else {
-                    return false
-                  }
-                }
-                return false
-              }
+              return predecessors.every(tryMatchPredecessor)
             } else {
               return false
             }
@@ -112,22 +97,7 @@ export function byIdAndInputs (id, inputs = {}) {
                 }
               }
             }
-            const predecessorMatches = predecessors.every(tryMatchPredecessor)
-            if (predecessorMatches) {
-              return true
-            } else {
-              while (!graph.node(predecessors[0].node).atomic) {
-                predecessors = realPredecessors(graph, predecessors[0].node, predecessors[0].port)
-                if (predecessors.length === 1) {
-                  if (predecessors.every(tryMatchPredecessor)) {
-                    return true
-                  }
-                } else {
-                  return false
-                }
-              }
-              return false
-            }
+            return predecessors.every(tryMatchPredecessor)
           } else {
             return false
           }
