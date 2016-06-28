@@ -95,14 +95,8 @@ export const replaceDoubleNegation = rule(
   match.byIdAndInputs('logic/not', { input: match.byIdAndInputs('logic/not', { input: match.any() }) }),
   replace.bridgeOver((graph, node, match) => {
     return [{
-      source: {
-        node: match.inputs.input.inputs.input.node,
-        port: 'output'
-      },
-      target: {
-        node: node,
-        port: 'output'
-      }
+      source: match.inputs.input.inputs.input.node,
+      target: node
     }]
   })
 )
