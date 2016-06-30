@@ -1,5 +1,5 @@
 import { rule, match, replace } from '../rewrite'
-import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge, moveNodeInto, removeEdge } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge, moveNodeInto, removeEdge, setNodeAt } from '../../util/rewrite'
 import { allEqual } from '../../util/check'
 import { copyNode } from '../../util/copy'
 import { constantBool } from '../nodes'
@@ -120,7 +120,7 @@ export const rewriteMultipleMultiplication = rule(
   },
   (graph, node, match) => {
     const multiply1 = `${node}:rewritten:m1`
-    graph.setNode(multiply1, {
+    setNodeAt(graph, multiply1, node, {
       'id': 'math/multiply',
       'inputPorts': {
         'm1': 'number',
@@ -132,12 +132,9 @@ export const rewriteMultipleMultiplication = rule(
       'atomic': true,
       'version': '0.2.0'
     })
-    if (graph.node(node).parent != null) {
-      graph.setParent(multiply1, graph.node(node).parent)
-    }
 
     const multiply2 = `${node}:rewritten:m2`
-    graph.setNode(multiply2, {
+    setNodeAt(graph, multiply2, node, {
       'id': 'math/multiply',
       'inputPorts': {
         'm1': 'number',
@@ -149,9 +146,6 @@ export const rewriteMultipleMultiplication = rule(
       'atomic': true,
       'version': '0.2.0'
     })
-    if (graph.node(node).parent != null) {
-      graph.setParent(multiply2, graph.node(node).parent)
-    }
 
     createEdgeFromEachPredecessor(graph,
       { node: match.inputs[0].inputs[0].node, port: match.inputs[0].inputs[0].inputs[0].port },
