@@ -39,12 +39,11 @@ export function applyRules (graph, rules, options = {}) {
         stats.appliedRules++
         if (options.onRuleApplied) {
           options.onRuleApplied(rule, graph)
-
-          if (decompoundify(graph)) {
-            stats.appliedRules++
-            if (options.onRuleApplied) {
-              options.onRuleApplied('remove unnecessary compounds', graph)
-            }
+        }
+        if (decompoundify(graph)) {
+          stats.appliedRules++
+          if (options.onRuleApplied) {
+            options.onRuleApplied('remove unnecessary compounds', graph)
           }
         }
       }
