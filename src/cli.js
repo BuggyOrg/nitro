@@ -14,6 +14,7 @@ program
   .option('-o, --out <graph output file>', 'Set a custom output file. If none is given, stdout is used.')
   .option('-i, --include-intermediate', 'Print an array of all intermediate graphs.')
   .option('--stats', 'Print stats to stderr after optimizing the graph.')
+  .option('-v, --verbose', 'Prints verbose output to stderr during optimization.')
   .parse(process.argv)
 
 let getInput = program.graphfile ? Promise.resolve(fs.readFileSync(program.graphfile, 'utf8')) : getStdin()
@@ -38,6 +39,9 @@ getInput
     const result = applyRules(graph, rewriteFunctions, {
       onRuleApplied: program.includeIntermediate ? (rule, graph) => {
         out.write(',' + JSON.stringify({ transition: { label: rule }, graph: graphlib.json.write(graph) }), 'utf8')
+        if (program.verbose) {
+          console.error(`Applied rule: ${rule}`)
+        }
       } : null
     })
 
