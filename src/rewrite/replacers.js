@@ -1,5 +1,6 @@
 import { replaceNode, deleteUnusedPredecessors, createEdgeToEachSuccessor, deepRemoveNode } from '../util/rewrite'
 import { walk } from '@buggyorg/graphtools'
+import _ from 'lodash'
 
 export function withNode (nodeCreator) {
   return (graph, node, match) => {
@@ -15,7 +16,7 @@ export function withNode (nodeCreator) {
 export function removeNode (portRewriter) {
   return (graph, node, match) => {
     if (portRewriter) {
-      let rewritePorts = portRewriter(graph, node, match)
+      let rewritePorts = _.isFunction(portRewriter) ? portRewriter(graph, node, match) : portRewriter
 
       rewritePorts.forEach(({ fromPort, toPort }) => {
         walk.predecessor(graph, node, fromPort).forEach((source) => {
@@ -46,7 +47,7 @@ export function removeNode (portRewriter) {
  */
 export function bridgeOver (bridgeCreator) {
   return (graph, node, match) => {
-    let bridges = bridgeCreator(graph, node, match)
+    let bridges = _.isFunction(bridgeCreator) ? bridgeCreator(graph, node, match) : bridgeCreator
 
     bridges.forEach(({ source, target }) => {
       createEdgeToEachSuccessor(graph, source, target)

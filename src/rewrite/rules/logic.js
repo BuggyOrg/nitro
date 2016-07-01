@@ -91,16 +91,6 @@ export const replaceConstantNot = rule(
   })
 )
 
-export const replaceDoubleNegation = rule(
-  match.byIdAndInputs('logic/not', { input: match.byIdAndInputs('logic/not', { input: match.any() }) }),
-  replace.bridgeOver((graph, node, match) => {
-    return [{
-      source: match.inputs.input.inputs.input.node,
-      target: node
-    }]
-  })
-)
-
 export const replaceDeMorganAnd = rule(
   match.byIdAndInputs('logic/and', {
     i1: match.byIdAndInputs('logic/not', { input: match.any() }),
@@ -206,29 +196,25 @@ export const replaceInvertedInvertable = rule(
     matchInvertableNode()
   ]),
   (graph, node, match) => {
-    const nodeValue = graph.node(match.inputs[0].node)
+    const newNode = `${match.inputs[0].node}:inverted`
+    const inverted = getInvertedNode(graph, match.inputs[0].node)
 
-    if (nodeValue.id === 'math/less') {
-      const newNode = `${match.inputs[0].node}:inverted`
-      const inverted = getInvertedNode(graph, match.inputs[0].node)
+    setNodeAt(graph, newNode, match.inputs[0].node, inverted.component)
 
-      setNodeAt(graph, newNode, match.inputs[0].node, inverted.component)
+    inverted.inputPorts.forEach(({oldPort, newPort}) => {
+      createEdgeFromEachPredecessor(graph,
+        { node: match.inputs[0].node, port: oldPort },
+        { node: newNode, port: newPort })
+    })
 
-      inverted.inputPorts.forEach(({oldPort, newPort}) => {
-        createEdgeFromEachPredecessor(graph,
-          { node: match.inputs[0].node, port: oldPort },
-          { node: newNode, port: newPort })
-      })
+    inverted.outputPorts.forEach(({oldPort, newPort}) => {
+      createEdgeToEachSuccessor(graph,
+        { node: newNode, port: newPort },
+        node)
+    })
 
-      inverted.outputPorts.forEach(({oldPort, newPort}) => {
-        createEdgeToEachSuccessor(graph,
-          { node: newNode, port: newPort },
-          node)
-      })
-
-      deleteUnusedPredecessors(graph, node)
-      graph.removeNode(node)
-    }
+    deleteUnusedPredecessors(graph, node)
+    graph.removeNode(node)
   }
 )
 
@@ -347,4 +333,9 @@ export const replaceConstantMux = rule(
       }]
     }
   })
+)
+
+export const removeId = rule(
+  match.byIdAndInputs('std/id'),
+  replace.removeNode([{ fromPort: 'input', toPort: 'output' }])
 )

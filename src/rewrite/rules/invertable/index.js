@@ -2,7 +2,8 @@ import { match } from '../../rewrite'
 
 export function matchInvertableNode () {
   return match.oneOf(
-    match.byIdAndInputs('math/less', [ match.any(), match.any() ])
+    match.byIdAndInputs('math/less', [ match.any(), match.any() ]),
+    match.byIdAndInputs('logic/not', [ match.any() ])
   )
 }
 
@@ -60,6 +61,28 @@ export function getInvertedNode (graph, node) {
         outputPorts: [{
           oldPort: 'value',
           newPort: 'value'
+        }]
+      }
+    case 'logic/not':
+      return {
+        component: {
+          'id': 'std/id',
+          'inputPorts': {
+            'input': 'generic'
+          },
+          'outputPorts': {
+            'output': 'generic'
+          },
+          'atomic': true,
+          'version': '0.2.1'
+        },
+        inputPorts: [{
+          oldPort: 'input',
+          newPort: 'input'
+        }],
+        outputPorts: [{
+          oldPort: 'output',
+          newPort: 'output'
         }]
       }
     default:
