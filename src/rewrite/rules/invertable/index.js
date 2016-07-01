@@ -1,4 +1,5 @@
 import { match } from '../../rewrite'
+import { createEdgeFromEachPredecessor, setNodeAt } from '../../../util/rewrite'
 
 export function matchInvertableNode () {
   return match.oneOf(
@@ -88,4 +89,23 @@ export function getInvertedNode (graph, node) {
     default:
       throw new Error(`${node} (type ${nodeValue.id}) is not invertable`)
   }
+}
+
+/**
+ * Inverts the given node and connects the input ports (but not the output port).
+ * @returns {string} name of the new node
+ */
+export function invertNode (graph, node) {
+  const newNode = `${node}:inverted`
+  const inverted = getInvertedNode(graph, node)
+
+  setNodeAt(graph, newNode, node, inverted.component)
+
+  inverted.inputPorts.forEach(({oldPort, newPort}) => {
+    createEdgeFromEachPredecessor(graph,
+      { node: node, port: oldPort },
+      { node: newNode, port: newPort })
+  })
+
+  return newNode
 }

@@ -1,6 +1,6 @@
 import { rule, match, replace } from '../rewrite'
 import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge, setNodeAt } from '../../util/rewrite'
-import { matchInvertableNode, getInvertedNode } from './invertable'
+import { matchInvertableNode, getInvertedNode, invertNode } from './invertable'
 import { constantBool } from '../nodes'
 
 export const replaceConstantAnd = rule(
@@ -196,23 +196,8 @@ export const replaceInvertedInvertable = rule(
     matchInvertableNode()
   ]),
   (graph, node, match) => {
-    const newNode = `${match.inputs[0].node}:inverted`
-    const inverted = getInvertedNode(graph, match.inputs[0].node)
-
-    setNodeAt(graph, newNode, match.inputs[0].node, inverted.component)
-
-    inverted.inputPorts.forEach(({oldPort, newPort}) => {
-      createEdgeFromEachPredecessor(graph,
-        { node: match.inputs[0].node, port: oldPort },
-        { node: newNode, port: newPort })
-    })
-
-    inverted.outputPorts.forEach(({oldPort, newPort}) => {
-      createEdgeToEachSuccessor(graph,
-        { node: newNode, port: newPort },
-        node)
-    })
-
+    const invertedNode = invertNode(graph, match.inputs[0].node)
+    createEdgeToEachSuccessor(graph, invertedNode, node)
     deleteUnusedPredecessors(graph, node)
     graph.removeNode(node)
   }
@@ -241,18 +226,8 @@ export const replaceNegatedAndWithInvertableInputs = rule(
     })
 
     // add inverted inputs
-    const invertedInputs = match.inputs[0].inputs.map((input, i) => {
-      const newNode = `${input.node}:inverted`
-      const original = input.node
-      const inverted = getInvertedNode(graph, original)
-      setNodeAt(graph, newNode, input.node, inverted.component)
-      inverted.inputPorts.forEach(({oldPort, newPort}) => {
-        createEdgeFromEachPredecessor(graph,
-          { node: original, port: oldPort },
-          { node: newNode, port: newPort })
-      })
-      return newNode
-    })
+    const invertedInputs = match.inputs[0].inputs
+      .map((input) => invertNode(graph, input.node))
 
     // connect the inverted inputs to the or node
     createEdge(graph, invertedInputs[0], { node: newOrNode, port: 'i1' })
@@ -289,18 +264,8 @@ export const replaceNegatedOrWithInvertableInputs = rule(
     })
 
     // add inverted inputs
-    const invertedInputs = match.inputs[0].inputs.map((input, i) => {
-      const newNode = `${input.node}:inverted`
-      const original = input.node
-      const inverted = getInvertedNode(graph, original)
-      setNodeAt(graph, newNode, input.node, inverted.component)
-      inverted.inputPorts.forEach(({oldPort, newPort}) => {
-        createEdgeFromEachPredecessor(graph,
-          { node: original, port: oldPort },
-          { node: newNode, port: newPort })
-      })
-      return newNode
-    })
+    const invertedInputs = match.inputs[0].inputs
+      .map((input) => invertNode(graph, input.node))
 
     // connect the inverted inputs to the and node
     createEdge(graph, invertedInputs[0], { node: newAndNode, port: 'i1' })
