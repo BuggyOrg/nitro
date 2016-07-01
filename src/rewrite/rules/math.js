@@ -230,3 +230,19 @@ export const bubbleUpConstant = ['math/add', 'math/multiply', 'logic/and', 'logi
     }
   }
 ))
+
+
+export const replaceConstantEqual = rule(
+  match.byIdAndInputs('logic/equal', { i1: match.constantNode(), i2: match.constantNode() }),
+  replace.withNode((graph, node, match) => {
+    const a = graph.node(match.inputs.i1.node)
+    const b = graph.node(match.inputs.i2.node)
+    return {
+      node: constantBool(a.params.value === b.params.value),
+      rewriteOutputPorts: [{
+        oldPort: 'eq',
+        newPort: 'output'
+      }]
+    }
+  })
+)
