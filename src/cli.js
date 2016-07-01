@@ -37,12 +37,14 @@ getInput
     }
 
     const result = applyRules(graph, rewriteFunctions, {
-      onRuleApplied: program.includeIntermediate ? (rule, graph) => {
-        out.write(',' + JSON.stringify({ transition: { label: rule }, graph: graphlib.json.write(graph) }), 'utf8')
+      onRuleApplied: (rule, graph) => {
+        if (program.includeIntermediate) {
+          out.write(',' + JSON.stringify({ transition: { label: rule }, graph: graphlib.json.write(graph) }), 'utf8')
+        }
         if (program.verbose) {
           console.error(`Applied rule: ${rule}`)
         }
-      } : null
+      }
     })
 
     if (program.includeIntermediate) {
