@@ -113,7 +113,7 @@ export function byIdAndInputs (id, inputs = {}) {
 export function constantNode (value, outputAlias) {
   return (graph, n) => {
     const node = graph.node(n)
-    if (node.id === 'math/const') {
+    if (node.id === 'math/const' || node.id === 'std/const') {
       const match = { node: n, outputs: {} }
       match.outputs[outputAlias || Object.keys(node.outputPorts)[0]] = Object.keys(node.outputPorts)[0]
 
