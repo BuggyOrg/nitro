@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { rule, match, replace } from '../rewrite'
 import { copyNode } from '../../util/copy'
-import { createEdgeToEachSuccessor, movePredecessorsInto, deepRemoveNode, createEdge } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, movePredecessorsInto, deepRemoveNode, createEdge, deleteUnusedPredecessors } from '../../util/rewrite'
 import { realPredecessors } from '../../util/realWalk'
 
 export const replaceNonRecursiveCall = rule(
@@ -47,6 +47,28 @@ export const replaceNonRecursivePartial = rule(
       }
     })
 
+    graph.removeNode(node)
+  }
+)
+
+// TODO extend this rule to work with any amount of partial nodes
+export const replaceCallAfterPartial = rule(
+  match.byIdAndInputs('functional/call', {
+    fn: match.byIdAndInputs('functional/partial', {
+      fn: match.lambda(),
+      value: match.any()
+    })
+  }),
+  (graph, node, match) => {
+    const lamdaImpl = copyNode(graph, graph.children(match.inputs.fn.inputs.fn.node)[0])
+    graph.setParent(lamdaImpl, graph.parent(node))
+    createEdgeToEachSuccessor(graph, lamdaImpl, node)
+
+    const partialTargetPort = Object.keys(graph.node(lamdaImpl).inputPorts)[graph.node(match.inputs.fn.node).params.partial]
+    createEdge(graph,
+      walk.predecessor(graph, match.inputs.fn.node, 'value')[0], { node: lamdaImpl, port: partialTargetPort })
+
+    deleteUnusedPredecessors(graph, node)
     graph.removeNode(node)
   }
 )
