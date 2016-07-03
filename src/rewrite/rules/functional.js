@@ -4,6 +4,8 @@ import { rule, match, replace } from '../rewrite'
 import { copyNode } from '../../util/copy'
 import { createEdgeToEachSuccessor, movePredecessorsInto, deepRemoveNode, createEdge, deleteUnusedPredecessors } from '../../util/rewrite'
 import { realPredecessors } from '../../util/realWalk'
+import { findDeep } from '../../util/object'
+import { getInputPorts } from '../../util/graph'
 
 export const replaceNonRecursiveCall = rule(
   match.byIdAndInputs('functional/call', {
@@ -53,20 +55,56 @@ export const replaceNonRecursivePartial = rule(
 
 // TODO extend this rule to work with any amount of partial nodes
 export const replaceCallAfterPartial = rule(
-  match.byIdAndInputs('functional/call', {
-    fn: match.byIdAndInputs('functional/partial', {
-      fn: match.lambda(),
-      value: match.any()
-    })
-  }),
+  (graph, node) => {
+    let matchLambdaOrPartial
+    matchLambdaOrPartial = match.oneOf(
+      match.lambda(),
+      match.byIdAndInputs('functional/partial', {
+        fn: (graph, node) => matchLambdaOrPartial(graph, node),
+        value: match.any()
+      })
+    )
+
+    return match.byIdAndInputs('functional/call', {
+      fn: match.byIdAndInputs('functional/partial', {
+        fn: matchLambdaOrPartial,
+        value: match.any()
+      })
+    })(graph, node)
+  },
   (graph, node, match) => {
-    const lamdaImpl = copyNode(graph, graph.children(match.inputs.fn.inputs.fn.node)[0])
+    const lambdaNode = findDeep(
+      match.inputs.fn.inputs.fn,
+      ({node}) => graph.node(node).id === 'functional/lambda',
+      (obj) => obj.inputs.fn
+    ).node
+
+    const lamdaImpl = copyNode(graph, graph.children(lambdaNode)[0])
     graph.setParent(lamdaImpl, graph.parent(node))
     createEdgeToEachSuccessor(graph, lamdaImpl, node)
 
-    const partialTargetPort = Object.keys(graph.node(lamdaImpl).inputPorts)[graph.node(match.inputs.fn.node).params.partial]
-    createEdge(graph,
-      walk.predecessor(graph, match.inputs.fn.node, 'value')[0], { node: lamdaImpl, port: partialTargetPort })
+    // connect all partial values to the new lambda function
+    let boundValues = []
+    findDeep(
+      match.inputs.fn,
+      ({node}) => graph.node(node).id === 'functional/lambda',
+      (obj) => {
+        const { node } = obj
+        const parameterIndex = graph.node(node).params.partial
+        boundValues.push({ value: walk.predecessor(graph, node, 'value')[0], parameterIndex })
+        console.error(node)
+        console.error(`one back from ${obj.node} => ${obj.inputs.fn.node}`)
+        return obj.inputs.fn
+      }
+    )
+    // take care of the indices (i.e. argument 0 of a function that was partial-ed once is actually argument 1)
+    const lambdaInputPorts = getInputPorts(graph, lamdaImpl)
+    const parameterIndices = _.range(boundValues.length)
+    _.forEachRight(boundValues, ({ value, parameterIndex }) => {
+      const targetPort = lambdaInputPorts[parameterIndices[parameterIndex]]
+      parameterIndices.splice(parameterIndex, 1)
+      createEdge(graph, value, { node: lamdaImpl, port: targetPort })
+    })
 
     deleteUnusedPredecessors(graph, node)
     graph.removeNode(node)
