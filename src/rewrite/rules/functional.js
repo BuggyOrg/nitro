@@ -53,7 +53,6 @@ export const replaceNonRecursivePartial = rule(
   }
 )
 
-// TODO extend this rule to work with any amount of partial nodes
 export const replaceCallAfterPartial = rule(
   (graph, node) => {
     let matchLambdaOrPartial
