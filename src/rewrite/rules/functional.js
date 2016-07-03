@@ -92,8 +92,6 @@ export const replaceCallAfterPartial = rule(
         const { node } = obj
         const parameterIndex = graph.node(node).params.partial
         boundValues.push({ value: walk.predecessor(graph, node, 'value')[0], parameterIndex })
-        console.error(node)
-        console.error(`one back from ${obj.node} => ${obj.inputs.fn.node}`)
         return obj.inputs.fn
       }
     )
