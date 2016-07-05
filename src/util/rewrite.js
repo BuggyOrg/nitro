@@ -282,7 +282,10 @@ export function createInputPort (graph, n, port, type) {
     node.inputPorts = {}
   }
   node.inputPorts[port] = type
-  // TODO add the new port to argumentOrdering
+
+  node.settings = node.settings || {}
+  node.settings.argumentOrdering = node.settings.argumentOrdering || []
+  node.settings.argumentOrdering.push(port)
 }
 
 export function createOutputPort (graph, n, port, type) {
@@ -291,7 +294,10 @@ export function createOutputPort (graph, n, port, type) {
     node.outputPorts = {}
   }
   node.outputPorts[port] = type
-  // TODO add the new port to argumentOrdering
+
+  node.settings = node.settings || {}
+  node.settings.argumentOrdering = node.settings.argumentOrdering || []
+  node.settings.argumentOrdering.push(port)
 }
 
 /**
