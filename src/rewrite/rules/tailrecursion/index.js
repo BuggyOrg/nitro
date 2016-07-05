@@ -73,6 +73,8 @@ export function extractIntoLambda (graph, trNode, { node, port }) {
   const lambda = `${node}_${_.uniqueId('copy_')}`
   graph.setNode(lambda, {
     id: 'functional/lambda',
+    version: '0.2.0',
+    atomic: true,
     outputPorts: { fn: 'function' },
     settings: {
       argumentOrdering: [ 'fn' ]
