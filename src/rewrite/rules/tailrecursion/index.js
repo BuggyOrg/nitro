@@ -1,4 +1,5 @@
 import { walk } from '@buggyorg/graphtools'
+import { getLambdaFunctionType } from '@buggyorg/functional'
 import _ from 'lodash'
 import { childrenDeep } from '../../../util/graph'
 import { createEdge, createInputPort, createOutputPort, tryGetInputPort, moveNodeInto, unpackCompoundNode,
@@ -70,7 +71,13 @@ export function matchTailRecursiveCompound (graph, n) {
  */
 export function extractIntoLambda (graph, trNode, { node, port }) {
   const lambda = `${node}_${_.uniqueId('copy_')}`
-  graph.setNode(lambda, { id: 'functional/lambda', outputPorts: { fn: 'lambda' } }) // TODO
+  graph.setNode(lambda, {
+    id: 'functional/lambda',
+    outputPorts: { fn: 'function' },
+    settings: {
+      argumentOrdering: [ 'fn' ]
+    }
+  })
   graph.setParent(lambda, graph.parent(trNode))
 
   const lambdaImpl = `${lambda}:impl`
@@ -113,6 +120,7 @@ export function extractIntoLambda (graph, trNode, { node, port }) {
     createEdge(graph, { node: lambdaImpl, port }, { node: lambdaImpl, port: `${port}_out` })
   }
 
+  graph.node(lambda).outputPorts.fn = getLambdaFunctionType(graph, lambda)
   return lambda
 }
 
