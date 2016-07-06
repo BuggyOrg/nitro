@@ -316,8 +316,9 @@ export function renamePort (graph, n, port, newName) {
     node.outputPorts[newName] = node.outputPorts[port]
     delete node.outputPorts[port]
   }
-  if (node.argumentOrdering) {
-    node.argumentOrdering = node.argumentOrdering.filter((arg) => arg === port ? newName : arg)
+
+  if (node.settings && node.settings.argumentOrdering) {
+    node.settings.argumentOrdering = node.settings.argumentOrdering.map((a) => a === port ? newName : a)
   }
 
   graph.nodeEdges(n).forEach((e) => {
