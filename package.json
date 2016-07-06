@@ -1,11 +1,8 @@
 {
-  "name": "@buggyorg/const-rewrite",
+  "name": "@buggyorg/nitro",
   "version": "0.1.0",
-  "description": "finds and rewrites constant branches",
+  "description": "An optimizer for Buggy control flow graphs.",
   "main": "lib/api.js",
-  "directories": {
-    "example": "examples"
-  },
   "scripts": {
     "test": "node_modules/mocha/bin/mocha --compilers js:babel-register && standard src/**/*.js",
     "build": "babel src -d lib",
