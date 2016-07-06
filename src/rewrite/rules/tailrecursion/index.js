@@ -122,7 +122,6 @@ export function extractIntoLambda (graph, trNode, { node, port }) {
     createEdge(graph, { node: lambdaImpl, port }, { node: lambdaImpl, port: `${port}_out` })
   }
 
-  graph.node(lambda).outputPorts.fn = getLambdaFunctionType(graph, lambda)
   return lambda
 }
 
@@ -171,6 +170,15 @@ function mergeLambdas (graph, lambdaFunctions) {
   })
 
   return firstLambda
+}
+
+function propagatePortType (graph, { node, port }) {
+  const type = graph.node(node).outputPorts[port]
+  if (type) {
+    walk.successor(graph, node, port).forEach((successor) => {
+      graph.node(successor.node).inputPorts[successor.port] = type
+    })
+  }
 }
 
 export function rewriteTailRecursionToLoop (graph, node, match) {
@@ -244,7 +252,6 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
   graph.setNode(tailrecNode, {
     id: 'tailrec',
     atomic: true,
-    specialForm: true,
     outputPorts: _.clone(graph.node(node).outputPorts),
     tailrecConfig: {
       tailcalls: [],
@@ -296,6 +303,25 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
       graph.node(tailrecNode).inputPorts[`f_${i}`] = graph.node(calculateParameters[predicate.predicate.input2.predecessor.node]).outputPorts.fn
     }
   })
+
+  // set correct function types for all generated lambda functions
+  predicateLambdas.forEach((predicate) => {
+    graph.node(predicate.lambda.control).outputPorts.fn = getLambdaFunctionType(graph, predicate.lambda.control)
+    propagatePortType(graph, { node: predicate.lambda.control, port: 'fn' })
+
+    if (predicate.lambda.input1) {
+      graph.node(predicate.lambda.input1).outputPorts.fn = getLambdaFunctionType(graph, predicate.lambda.input1)
+      propagatePortType(graph, { node: predicate.lambda.input1, port: 'fn' })
+    }
+    if (predicate.lambda.input2) {
+      graph.node(predicate.lambda.input2).outputPorts.fn = getLambdaFunctionType(graph, predicate.lambda.input2)
+      propagatePortType(graph, { node: predicate.lambda.input2, port: 'fn' })
+    }
+  })
+  _.each(calculateParameters, ((lambda) => {
+    graph.node(lambda).outputPorts.fn = getLambdaFunctionType(graph, lambda)
+    propagatePortType(graph, { node: lambda, port: 'fn' })
+  }))
 
   deepRemoveNode(graph, node)
 }
