@@ -1,13 +1,12 @@
-import graphlib from 'graphlib'
 import _ from 'lodash'
 import { removeUnnecessaryCompoundNodes } from './rules/compounds'
 
 export function applyRule (graph, rule) {
   let anyRuleApplied = false
   let ruleApplied = null
-  while (ruleApplied !== false) {
-    ruleApplied = rule(graph)
-    if (ruleApplied !== false) {
+  while (ruleApplied) {
+    ruleApplied = rule.apply(graph)
+    if (ruleApplied) {
       anyRuleApplied = true
     }
   }
@@ -19,6 +18,10 @@ function decompoundify (graph) {
 }
 
 export function applyRules (graph, rules, options = {}) {
+  if (!_.isArray(rules) && _.isObject(rules)) {
+    rules = _.values(rules)
+  }
+
   const stats = {
     initialNodes: graph.nodes().length,
     initialEdges: graph.edges().length,
@@ -36,9 +39,9 @@ export function applyRules (graph, rules, options = {}) {
   do {
     anyRuleApplied = false
 
-    rules.forEach(f => {
-      const rule = f(graph)
-      if (rule !== false) {
+    rules.forEach(rule => {
+      const ruleApplied = rule.apply(graph)
+      if (ruleApplied) {
         anyRuleApplied = true
         stats.appliedRules++
         if (options.onRuleApplied) {

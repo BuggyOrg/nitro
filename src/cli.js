@@ -5,8 +5,7 @@ import graphlib from 'graphlib'
 import getStdin from 'get-stdin'
 import fs from 'fs'
 import path from 'path'
-import rewriteRules from './rewrite/rules/index'
-import { applyRules } from './rewrite/index'
+import optimizeGraph from './api'
 
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '/../package.json')))['version'])
@@ -22,7 +21,6 @@ let getInput = program.graphfile ? Promise.resolve(fs.readFileSync(program.graph
 getInput
   .then((serializedGraph) => {
     let graph = graphlib.json.read(JSON.parse(serializedGraph))
-    let rewriteFunctions = [ ...rewriteRules ]
 
     let out
     if (program.out) {
@@ -36,13 +34,17 @@ getInput
       out.write(JSON.stringify({ graph: graphlib.json.write(graph) }), 'utf8')
     }
 
-    const result = applyRules(graph, rewriteFunctions, {
+    const result = optimizeGraph(graph, {
       onRuleApplied: (rule, graph) => {
         if (program.includeIntermediate) {
-          out.write(',' + JSON.stringify({ transition: { label: rule }, graph: graphlib.json.write(graph) }), 'utf8')
+          out.write(',' + JSON.stringify({ transition: { label: rule.name }, graph: graphlib.json.write(graph) }), 'utf8')
         }
         if (program.verbose) {
-          console.error(`Applied rule: ${rule}`)
+          if (rule.name === rule.id) {
+            console.error(`Applied rule: ${rule.id}`)
+          } else {
+            console.error(`Applied rule: ${rule.name} (${rule.id})`)
+          }
         }
       }
     })

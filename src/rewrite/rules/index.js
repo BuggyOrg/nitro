@@ -4,23 +4,29 @@ import * as logicRules from './logic'
 import * as functionalRules from './functional'
 import * as compoundRules from './compounds'
 
-function applyAndReturnName (functions) {
-  return Object.keys(functions).map((r) => {
-    const fn = _.isArray(functions[r]) ? functions[r] : [functions[r]]
-    return fn.map((fn) => (...args) => {
-      const applied = fn.apply(undefined, args)
-      if (applied) {
-        return (fn.meta ? fn.meta.name : null) || r
-      } else {
-        return false
+function mapRules (functions) {
+  return Object.keys(functions).map((r, i) => {
+    const rule = functions[r]
+    if (_.isArray(rule)) {
+      return rule.map((fn) => ({
+        id: (fn.meta ? fn.meta.id : null) || `${r}_${i}`,
+        name: (fn.meta ? fn.meta.name : null) || `${r}_${i}`,
+        apply: fn
+      }))
+    } else {
+      const fn = rule
+      return {
+        id: (fn.meta ? fn.meta.id : null) || r,
+        name: (fn.meta ? fn.meta.name : null) || r,
+        apply: fn
       }
-    })
+    }
   })
 }
 
 export default _.flattenDeep([
-  applyAndReturnName(mathRules),
-  applyAndReturnName(logicRules),
-  applyAndReturnName(functionalRules),
-  applyAndReturnName(compoundRules)
+  mapRules(mathRules),
+  mapRules(logicRules),
+  mapRules(functionalRules),
+  mapRules(compoundRules)
 ])

@@ -2,8 +2,7 @@
   "name": "@buggyorg/const-rewrite",
   "version": "0.1.0",
   "description": "finds and rewrites constant branches",
-  "main": "lib/constrewrite.js",
-  "esnext:main": "src/constrewrite.js",
+  "main": "lib/api.js",
   "directories": {
     "example": "examples"
   },
