@@ -22,7 +22,7 @@ export const removeUnnecessaryCompoundNodes = rule(
     }
   },
   (graph, node) => unpackCompoundNode(graph, node),
-  { name: 'remove unnecessary compound' }
+  { name: 'remove unnecessary compounds' }
 )
 
 export const moveInputsIntoRecursiveCompounds = rule(

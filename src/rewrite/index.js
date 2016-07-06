@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { removeUnnecessaryCompoundNodes } from './rules/compounds'
+import rewriteRules from './rules/index'
 
 function applyRuleOnce (graph, rule) {
   if (_.isFunction(rule)) {
@@ -24,7 +24,7 @@ export function applyRule (graph, rule) {
 }
 
 function decompoundify (graph) {
-  return applyRule(graph, removeUnnecessaryCompoundNodes)
+  return applyRule(graph, rewriteRules.removeUnnecessaryCompoundNodes)
 }
 
 export function applyRules (graph, rules, options = {}) {
@@ -41,7 +41,7 @@ export function applyRules (graph, rules, options = {}) {
   if (decompoundify(graph)) {
     stats.appliedRules++
     if (options.onRuleApplied) {
-      options.onRuleApplied({ name: 'remove unnecessary compounds', id: 'removeUnnecessaryCompoundNodes' }, graph)
+      options.onRuleApplied(rewriteRules.removeUnnecessaryCompoundNodes, graph)
     }
   }
 
@@ -61,7 +61,7 @@ export function applyRules (graph, rules, options = {}) {
         if (decompoundify(graph)) {
           stats.appliedRules++
           if (options.onRuleApplied) {
-            options.onRuleApplied({ name: 'remove unnecessary compounds', id: 'removeUnnecessaryCompoundNodes' }, graph)
+            options.onRuleApplied(rewriteRules.removeUnnecessaryCompoundNodes, graph)
           }
         }
       }

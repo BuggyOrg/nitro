@@ -24,9 +24,9 @@ function mapRules (functions) {
   })
 }
 
-export default _.flattenDeep([
+export default _.keyBy(_.flattenDeep([
   mapRules(mathRules),
   mapRules(logicRules),
   mapRules(functionalRules),
   mapRules(compoundRules)
-])
+]), 'id')
