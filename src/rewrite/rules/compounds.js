@@ -62,7 +62,7 @@ export const moveInputsIntoRecursiveCompounds = rule(
 )
 
 export const tailRecursionToLoop = rule(
-  match.once(matchTailRecursiveCompound), // TODO match more than once
+  matchTailRecursiveCompound,
   (graph, node, match) => {
     rewriteTailRecursionToLoop(graph, node, match)
   }
