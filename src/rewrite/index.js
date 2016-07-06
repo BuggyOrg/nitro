@@ -1,15 +1,25 @@
 import _ from 'lodash'
 import { removeUnnecessaryCompoundNodes } from './rules/compounds'
 
+function applyRuleOnce (graph, rule) {
+  if (_.isFunction(rule)) {
+    return rule(graph)
+  } else if (_.isFunction(rule.apply)) {
+    return rule.apply(graph)
+  } else {
+    throw new Error('Invalid rule ' + rule + ', must be a function or a rule object')
+  }
+}
+
 export function applyRule (graph, rule) {
   let anyRuleApplied = false
-  let ruleApplied = null
-  while (ruleApplied) {
-    ruleApplied = rule.apply(graph)
+  let ruleApplied
+  do {
+    ruleApplied = applyRuleOnce(graph, rule)
     if (ruleApplied) {
       anyRuleApplied = true
     }
-  }
+  } while (ruleApplied)
   return anyRuleApplied
 }
 
@@ -31,7 +41,7 @@ export function applyRules (graph, rules, options = {}) {
   if (decompoundify(graph)) {
     stats.appliedRules++
     if (options.onRuleApplied) {
-      options.onRuleApplied('remove unnecessary compounds', graph)
+      options.onRuleApplied({ name: 'remove unnecessary compounds', id: 'removeUnnecessaryCompoundNodes' }, graph)
     }
   }
 
@@ -39,8 +49,8 @@ export function applyRules (graph, rules, options = {}) {
   do {
     anyRuleApplied = false
 
-    rules.forEach(rule => {
-      const ruleApplied = rule.apply(graph)
+    rules.forEach((rule) => {
+      const ruleApplied = applyRuleOnce(graph, rule)
       if (ruleApplied) {
         anyRuleApplied = true
         stats.appliedRules++
@@ -51,7 +61,7 @@ export function applyRules (graph, rules, options = {}) {
         if (decompoundify(graph)) {
           stats.appliedRules++
           if (options.onRuleApplied) {
-            options.onRuleApplied('remove unnecessary compounds', graph)
+            options.onRuleApplied({ name: 'remove unnecessary compounds', id: 'removeUnnecessaryCompoundNodes' }, graph)
           }
         }
       }
