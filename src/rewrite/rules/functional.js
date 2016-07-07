@@ -60,14 +60,14 @@ export const replaceCallAfterPartial = rule(
       match.lambda(),
       match.byIdAndInputs('functional/partial', {
         fn: (graph, node) => matchLambdaOrPartial(graph, node),
-        value: match.any()
+        value: match.any({ requireNode: false })
       })
     )
 
     return match.byIdAndInputs('functional/call', {
       fn: match.byIdAndInputs('functional/partial', {
         fn: matchLambdaOrPartial,
-        value: match.any()
+        value: match.any({ requireNode: false })
       })
     })(graph, node)
   },
@@ -118,7 +118,7 @@ export const replacePartialPartial = rule(
     fn: match.lambda(),
     value: match.byIdAndInputs('functional/partial', {
       fn: match.lambda({ outputPorts: 1, inputPorts: 1 }),
-      value: match.any()
+      value: match.any({ requireNode: false })
     })
   }),
   (graph, node, match) => {
