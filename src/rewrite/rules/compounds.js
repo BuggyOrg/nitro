@@ -37,7 +37,10 @@ export const moveInputsIntoRecursiveCompounds = rule(
       const constantInputPort = Object.keys(node.inputPorts).find((port) => {
         const predecessor = realPredecessors(graph, n, port)
         return predecessor.length === 1 && match.movable()(graph, predecessor[0].node) &&
-               recursiveCalls.every((call) => isSamePort(realPredecessors(graph, call, port)[0], predecessor[0]))
+               recursiveCalls.every((call) => {
+                 const callPredecessor = realPredecessors(graph, call, port, { crossRecursiveBoundaries: true })
+                 return callPredecessor.length === 1 && isSamePort(callPredecessor[0], predecessor[0])
+               })
       })
       return constantInputPort ? { node, constantInputPort, recursiveCalls } : false
     } else {
