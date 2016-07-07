@@ -3,9 +3,12 @@ import { walk } from '@buggyorg/graphtools'
 import { realPredecessors } from '../util/realWalk'
 import { atomicSuccessorsInPort } from '../util/atomicWalk'
 
-export function any (outputAlias) {
+export function any (options = {}) {
   return (graph, node) => {
-    return { node }
+    if (options.requireNode === false || graph.hasNode(node)) {
+      return { node }
+    }
+    return false
   }
 }
 
@@ -24,7 +27,7 @@ export function oneOf (...rules) {
 export function byIdAndInputs (id, inputs = {}) {
   return (graph, n) => {
     const node = graph.node(n)
-    if (node.id === id) {
+    if (node && node.id === id) {
       const match = { node: n, inputs: {} }
 
       if (_.isArray(inputs)) {
@@ -34,32 +37,31 @@ export function byIdAndInputs (id, inputs = {}) {
         const isMatch = inputs.every((inputMatcher, index) => {
           const matchingPort = inputPortsLeft.find((inputPort) => {
             let predecessors = realPredecessors(graph, n, inputPort)
-            if (predecessors.length === 1) {
-              const tryMatchPredecessor = ({node, port}) => {
-                if (_.isFunction(inputMatcher)) {
-                  const inputMatch = inputMatcher(graph, node)
-                  if (inputMatch !== false) {
-                    match.inputs[index] = inputMatch
-                    match.inputs[index].port = inputPort
-                    return true
-                  } else {
-                    return false
-                  }
+            const tryMatchPredecessor = ({node, port}) => {
+              if (_.isFunction(inputMatcher)) {
+                const inputMatch = inputMatcher(graph, node)
+                if (inputMatch !== false) {
+                  match.inputs[index] = inputMatch
+                  match.inputs[index].port = inputPort
+                  return true
                 } else {
-                  const inputMatch = inputMatcher.match(graph, node)
-                  if (inputMatch !== false) {
-                    match.inputs[inputMatcher.alias || index] = inputMatch
-                    match.inputs[inputMatcher.alias || index].port = inputPort
-                    return true
-                  } else {
-                    return false
-                  }
+                  return false
+                }
+              } else {
+                const inputMatch = inputMatcher.match(graph, node)
+                if (inputMatch !== false) {
+                  match.inputs[inputMatcher.alias || index] = inputMatch
+                  match.inputs[inputMatcher.alias || index].port = inputPort
+                  return true
+                } else {
+                  return false
                 }
               }
-
+            }
+            if (predecessors.length === 1) {
               return predecessors.every(tryMatchPredecessor)
             } else {
-              return false
+              return tryMatchPredecessor({ node: null, port: null })
             }
           })
 
@@ -74,32 +76,32 @@ export function byIdAndInputs (id, inputs = {}) {
       } else {
         const isMatch = Object.keys(inputs).every((inputPort) => {
           let predecessors = realPredecessors(graph, n, inputPort)
-          if (predecessors.length === 1) {
-            const tryMatchPredecessor = ({node, port}) => {
-              let inputMatcher = inputs[inputPort]
-              if (_.isFunction(inputMatcher)) {
-                const inputMatch = inputMatcher(graph, node)
-                if (inputMatch !== false) {
-                  match.inputs[inputPort] = inputMatch
-                  match.inputs[inputPort].port = inputPort
-                  return true
-                } else {
-                  return false
-                }
+          const tryMatchPredecessor = ({node, port}) => {
+            let inputMatcher = inputs[inputPort]
+            if (_.isFunction(inputMatcher)) {
+              const inputMatch = inputMatcher(graph, node)
+              if (inputMatch !== false) {
+                match.inputs[inputPort] = inputMatch
+                match.inputs[inputPort].port = inputPort
+                return true
               } else {
-                const inputMatch = inputMatcher.match(graph, node)
-                if (inputMatch !== false) {
-                  match.inputs[inputMatcher.alias || inputPort] = inputMatch
-                  match.inputs[inputMatcher.alias || inputPort].port = inputPort
-                  return true
-                } else {
-                  return false
-                }
+                return false
+              }
+            } else {
+              const inputMatch = inputMatcher.match(graph, node)
+              if (inputMatch !== false) {
+                match.inputs[inputMatcher.alias || inputPort] = inputMatch
+                match.inputs[inputMatcher.alias || inputPort].port = inputPort
+                return true
+              } else {
+                return false
               }
             }
+          }
+          if (predecessors.length === 1) {
             return predecessors.every(tryMatchPredecessor)
           } else {
-            return false
+            return tryMatchPredecessor({ node: null, port: null })
           }
         })
         return isMatch ? match : false
@@ -113,7 +115,7 @@ export function byIdAndInputs (id, inputs = {}) {
 export function constantNode (value, outputAlias) {
   return (graph, n) => {
     const node = graph.node(n)
-    if (node.id === 'math/const' || node.id === 'std/const') {
+    if (node && (node.id === 'math/const' || node.id === 'std/const')) {
       const match = { node: n, outputs: {} }
       match.outputs[outputAlias || Object.keys(node.outputPorts)[0]] = Object.keys(node.outputPorts)[0]
 
@@ -134,7 +136,7 @@ export function lambda (options = {}) {
   return (graph, n) => {
     const node = graph.node(n)
 
-    if (node.id === 'functional/lambda') {
+    if (node && node.id === 'functional/lambda') {
       const implNode = graph.node(graph.children(n)[0])
       if (typeof options.recursive !== 'undefined') {
         if ((options.recursive && !(node.settings && node.settings.recursive)) ||
@@ -166,7 +168,7 @@ export function lambda (options = {}) {
 
 export function sink (matcher = any()) {
   return (graph, node) => {
-    if (graph.successors(node).length === 0) {
+    if (node && graph.successors(node).length === 0) {
       return matcher(graph, node)
     }
     return false
@@ -179,6 +181,9 @@ export function alias (alias, match) {
 
 export function movable (matcher = any()) {
   return (graph, node) => {
+    if (!graph.hasNode(node)) {
+      return false
+    }
     const parent = graph.parent(node)
     const isMoveable = (graph, node) => {
       return graph.parent(node) === parent &&
