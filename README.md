@@ -2,7 +2,20 @@
 Nitro is an optimizer for Buggy programs that uses graph rewriting.
 
 ## CLI
-_Coming soon..._
+You need to install Nitro with `npm i -g @buggyorg/nitro` in order to use it. The following options are available:
+
+```
+-f, --graphfile <graph file>   Set graph file to parse. If none is given stdin is read
+-o, --out <graph output file>  Set a custom output file. If none is given, stdout is used.
+-i, --include-intermediate     Print an array of all intermediate graphs.
+--stats                        Print stats to stderr after optimizing the graph.
+-v, --verbose                  Prints verbose output to stderr during optimization.
+--keep-dead-code               Disable removal of unreachable code.
+-h, --help                     Output usage information.
+-V, --version                  Output the version number.
+```
+
+Example usage: `nitro -f program.json --stats -v -o program_optimized.json`
 
 ## API
 You can use Nitro (or maybe certain rewrite rules) easily using the its API.

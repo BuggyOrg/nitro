@@ -9,7 +9,7 @@ import { rules, optimize as optimizeGraph } from './api'
 
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '/../package.json')))['version'])
-  .option('-f, --graphfile <graph file>', 'Set graph file to parse. If none is given stdin is read')
+  .option('-f, --graphfile <graph file>', 'Set graph file to parse. If none is given stdin is read.')
   .option('-o, --out <graph output file>', 'Set a custom output file. If none is given, stdout is used.')
   .option('-i, --include-intermediate', 'Print an array of all intermediate graphs.')
   .option('--stats', 'Print stats to stderr after optimizing the graph.')
