@@ -241,7 +241,6 @@ export const bubbleUpConstant = ['math/add', 'math/multiply', 'logic/and', 'logi
   }
 ))
 
-
 export const replaceConstantEqual = rule(
   match.byIdAndInputs('logic/equal', { i1: match.constantNode(), i2: match.constantNode() }),
   replace.withNode((graph, node, match) => {
@@ -251,6 +250,39 @@ export const replaceConstantEqual = rule(
       node: constantBool(a.params.value === b.params.value),
       rewriteOutputPorts: [{
         oldPort: 'eq',
+        newPort: 'output'
+      }]
+    }
+  })
+)
+
+export const replaceAlwaysTrueComparison = rule(
+  match.once(match.oneOf(
+    match.byIdAndSameInputs('logic/equal', ['i1', 'i2'], match.any({ requireNode: false })),
+    match.byIdAndSameInputs('math/lessOrEqual', ['isLessOrEqual', 'than'], match.any({ requireNode: false })),
+    match.byIdAndSameInputs('logic/greaterOrEqual', ['isGreaterOrEqual', 'than'], match.any({ requireNode: false }))
+  )),
+  replace.withNode((graph, node, match) => {
+    return {
+      node: constantBool(true),
+      rewriteOutputPorts: [{
+        oldPort: Object.keys(graph.node(node).outputPorts)[0],
+        newPort: 'output'
+      }]
+    }
+  })
+)
+
+export const replaceAlwaysFalseComparison = rule(
+  match.once(match.oneOf(
+    match.byIdAndSameInputs('math/less', ['isLess', 'than'], match.any({ requireNode: false })),
+    match.byIdAndSameInputs('logic/greater', ['isGreater', 'than'], match.any({ requireNode: false }))
+  )),
+  replace.withNode((graph, node, match) => {
+    return {
+      node: constantBool(false),
+      rewriteOutputPorts: [{
+        oldPort: Object.keys(graph.node(node).outputPorts)[0],
         newPort: 'output'
       }]
     }

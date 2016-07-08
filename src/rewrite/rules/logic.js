@@ -1,6 +1,6 @@
 import { rule, match, replace } from '../rewrite'
 import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge, setNodeAt } from '../../util/rewrite'
-import { matchInvertableNode, getInvertedNode, invertNode } from './invertable'
+import { matchInvertableNode, invertNode } from './invertable'
 import { constantBool } from '../nodes'
 
 export const replaceConstantAnd = rule(

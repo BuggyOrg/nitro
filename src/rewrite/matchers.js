@@ -217,3 +217,51 @@ export function once (matcher) {
     }
   }
 }
+
+export function withState (fn) {
+  const vars = {}
+  return (graph, node) => {
+    const state = {
+      set (variable, matcher) {
+        return (graph, node) => {
+          const match = matcher(graph, node)
+          vars[variable] = match
+          return match
+        }
+      },
+
+      get (variable) {
+        return (graph, node) => {
+          if (vars[variable] != null && vars[variable] !== false && vars[variable].node === node) {
+            return { node }
+          } else {
+            return false
+          }
+        }
+      },
+
+      getOrSet (variable, matcher) {
+        return (graph, node) => {
+          if (vars[variable] != null) {
+            if (vars[variable] !== false && vars[variable].node === node) {
+              return { node }
+            } else {
+              return false
+            }
+          } else {
+            const match = matcher(graph, node)
+            vars[variable] = match
+            return match
+          }
+        }
+      }
+    }
+    return fn(state)(graph, node)
+  }
+}
+
+export function byIdAndSameInputs (id, ports, inputMatcher) {
+  return withState((state) =>
+    byIdAndInputs(id, _.zipObject(ports, _.map(ports, () => state.getOrSet('p', inputMatcher))))
+  )
+}
