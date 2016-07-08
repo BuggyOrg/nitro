@@ -3,6 +3,7 @@ import * as mathRules from './math'
 import * as logicRules from './logic'
 import * as functionalRules from './functional'
 import * as compoundRules from './compounds'
+import * as deadCode from './deadCode'
 
 function mapRules (functions) {
   return Object.keys(functions).map((r, i) => {
@@ -28,5 +29,6 @@ export default _.keyBy(_.flattenDeep([
   mapRules(mathRules),
   mapRules(logicRules),
   mapRules(functionalRules),
-  mapRules(compoundRules)
+  mapRules(compoundRules),
+  mapRules(deadCode)
 ]), 'id')

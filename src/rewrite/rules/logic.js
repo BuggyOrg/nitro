@@ -279,27 +279,6 @@ export const replaceNegatedOrWithInvertableInputs = rule(
   }
 )
 
-export const replaceConstantMux = rule(
-  match.byIdAndInputs('logic/mux', {
-    control: match.constantNode(),
-    input1: match.any(),
-    input2: match.any()
-  }),
-  replace.bridgeOver((graph, node, match) => {
-    if (graph.node(match.inputs.control.node).params.value) {
-      return [{
-        source: match.inputs.input1.node,
-        target: match.node
-      }]
-    } else {
-      return [{
-        source: match.inputs.input2.node,
-        target: match.node
-      }]
-    }
-  })
-)
-
 export const removeId = rule(
   match.byIdAndInputs('std/id'),
   replace.removeNode([{ fromPort: 'input', toPort: 'output' }])
