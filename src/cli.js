@@ -5,7 +5,7 @@ import graphlib from 'graphlib'
 import getStdin from 'get-stdin'
 import fs from 'fs'
 import path from 'path'
-import optimizeGraph from './api'
+import { rules, optimize as optimizeGraph } from './api'
 
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '/../package.json')))['version'])
@@ -14,6 +14,7 @@ program
   .option('-i, --include-intermediate', 'Print an array of all intermediate graphs.')
   .option('--stats', 'Print stats to stderr after optimizing the graph.')
   .option('-v, --verbose', 'Prints verbose output to stderr during optimization.')
+  .option('--keep-dead-code', 'Disable removal of unreachable code.')
   .parse(process.argv)
 
 let getInput = program.graphfile ? Promise.resolve(fs.readFileSync(program.graphfile, 'utf8')) : getStdin()
@@ -35,6 +36,7 @@ getInput
     }
 
     const result = optimizeGraph(graph, {
+      keepDeadCode: program.keepDeadCode,
       onRuleApplied: (rule, graph) => {
         if (program.includeIntermediate) {
           out.write(',' + JSON.stringify({ transition: { label: rule.name }, graph: graphlib.json.write(graph) }), 'utf8')

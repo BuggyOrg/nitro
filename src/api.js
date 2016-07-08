@@ -3,7 +3,8 @@ import rewriteRules from './rewrite/rules/index'
 import { applyRules, applyRule } from './rewrite/index'
 
 export function optimize (graph, options = {}) {
-  return applyRules(graph, options.rules || _.values(rewriteRules), options)
+  const defaultRules = options.keepDeadCode ? _.omit(rewriteRules, ['replaceConstantMux', 'removeUnusedBranches']) : rewriteRules
+  return applyRules(graph, options.rules || defaultRules, options)
 }
 
 export { applyRule }
