@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "An optimizer for Buggy control flow graphs.",
   "main": "lib/api.js",
+  "bin": {
+    "nitro": "./lib/cli.js"
+  },
   "scripts": {
     "test": "node_modules/mocha/bin/mocha --compilers js:babel-register && standard src/**/*.js",
     "build": "babel src -d lib",
