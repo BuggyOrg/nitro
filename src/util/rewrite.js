@@ -323,10 +323,10 @@ export function renamePort (graph, n, port, newName) {
 
   graph.nodeEdges(n).forEach((e) => {
     const edge = graph.edge(e)
-    if (e.v === n && edge.inPort === port) {
-      edge.inPort = newName
-    } else if (e.w === n && edge.outPort === port) {
+    if (e.v === n && edge.outPort === port) {
       edge.outPort = newName
+    } else if (e.w === n && edge.inPort === port) {
+      edge.inPort = newName
     }
   })
 }
