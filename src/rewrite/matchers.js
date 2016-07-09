@@ -170,15 +170,6 @@ export function lambda (options = {}) {
   }
 }
 
-export function sink (matcher = any()) {
-  return (graph, node) => {
-    if (node && graph.successors(node).length === 0) {
-      return matcher(graph, node)
-    }
-    return false
-  }
-}
-
 export function alias (alias, match) {
   return { match, alias }
 }

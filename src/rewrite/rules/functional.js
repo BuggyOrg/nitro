@@ -108,11 +108,6 @@ export const replaceCallAfterPartial = rule(
   }
 )
 
-export const removeUnusedLambda = rule(
-  match.sink(match.byIdAndInputs('functional/lambda')),
-  replace.removeNode()
-)
-
 export const replacePartialPartial = rule(
   match.byIdAndInputs('functional/partial', {
     fn: match.lambda(),
