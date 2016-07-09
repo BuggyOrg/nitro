@@ -25,19 +25,23 @@ export const replaceConstantMux = rule(
 
 export const removeUnusedBranches = (graph) => {
   const requiredNodes = {}
+  const markPredecessorsAndChildren = (n) => {
+    _.union(
+      _.flattenDeep(
+        Object.keys(graph.node(n).inputPorts || {})
+        .map((port) => walk.predecessor(graph, n, port).map(({node}) => node))
+      ),
+      graph.children(n)
+    ).forEach((node) => {
+      if (!requiredNodes[node]) {
+        requiredNodes[node] = true
+        markPredecessorsAndChildren(node)
+      }
+    })
+  }
+
   graph.nodes().filter((n) => graph.node(n).isSink).forEach((n) => {
     requiredNodes[n] = true
-
-    const markPredecessorsAndChildren = (n) => {
-      Object.keys(graph.node(n).inputPorts || {}).forEach((port) => walk.predecessor(graph, n, port).forEach(({ node }) => {
-        if (!requiredNodes[node]) {
-          requiredNodes[node] = true
-          markPredecessorsAndChildren(node)
-          graph.children(node).forEach(markPredecessorsAndChildren)
-        }
-      }))
-    }
-
     markPredecessorsAndChildren(n)
   })
 
