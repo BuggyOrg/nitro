@@ -326,9 +326,9 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
     graph.node(tailrecNode).inputPorts[`p_${i}`] = graph.node(predicate.lambda.control).outputPorts.fn
 
     if (predicate.lambda.input1) {
-      createEdge(graph, predicate.lambda.input1, { node: tailrecNode, port: `f_${i + 1}` })
+      createEdge(graph, predicate.lambda.input1, { node: tailrecNode, port: `f_${i}` })
       graph.node(tailrecNode).tailrecConfig.returnPort = predicate.lambda.input1RelevantPort
-      graph.node(tailrecNode).inputPorts[`f_${i + 1}`] = graph.node(predicate.lambda.input1).outputPorts.fn
+      graph.node(tailrecNode).inputPorts[`f_${i}`] = graph.node(predicate.lambda.input1).outputPorts.fn
     } else if (predicate.lambda.input2) {
       createEdge(graph, predicate.lambda.input2, { node: tailrecNode, port: `f_${i + 1}` })
       graph.node(tailrecNode).tailrecConfig.returnPort = predicate.lambda.input2RelevantPort
@@ -340,9 +340,9 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
       graph.node(tailrecNode).tailrecConfig.tailcalls.push(`f_${i}`)
       graph.node(tailrecNode).inputPorts[`f_${i}`] = graph.node(calculateParameters[predicate.predicate.input1.predecessor.node]).outputPorts.fn
     } else if (predicate.predicate.input2.isTailcall) {
-      createEdge(graph, calculateParameters[predicate.predicate.input2.predecessor.node], { node: tailrecNode, port: `f_${i}` })
-      graph.node(tailrecNode).tailrecConfig.tailcalls.push(`f_${i}`)
-      graph.node(tailrecNode).inputPorts[`f_${i}`] = graph.node(calculateParameters[predicate.predicate.input2.predecessor.node]).outputPorts.fn
+      createEdge(graph, calculateParameters[predicate.predicate.input2.predecessor.node], { node: tailrecNode, port: `f_${i + 1}` })
+      graph.node(tailrecNode).tailrecConfig.tailcalls.push(`f_${i + 1}`)
+      graph.node(tailrecNode).inputPorts[`f_${i + 1}`] = graph.node(calculateParameters[predicate.predicate.input2.predecessor.node]).outputPorts.fn
     }
   })
 
