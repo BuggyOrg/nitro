@@ -127,24 +127,48 @@ export function extractIntoLambda (graph, trNode, { node, port }) {
 
 /**
  * Adds all input ports of the given reference node to the given node, if they don't exist yet.
+ * Also ensures that the argumentOrdering of the input ports is the same as in the reference node.
  */
-function ensureInputPorts (graph, node, referenceNode) {
-  Object.keys(graph.node(referenceNode).inputPorts).forEach((port) => {
-    if (!graph.node(node).inputPorts[port]) {
-      createInputPort(graph, node, port, graph.node(referenceNode).inputPorts[port])
+function ensureInputPorts (graph, node, referenceNodeId) {
+  const nodeValue = graph.node(node)
+  const referenceNode = graph.node(referenceNodeId)
+
+  Object.keys(referenceNode.inputPorts).forEach((port) => {
+    if (!nodeValue.inputPorts[port]) {
+      createInputPort(graph, node, port, referenceNode.inputPorts[port])
     }
   })
+
+  if (referenceNode.settings && referenceNode.settings.argumentOrdering) {
+    nodeValue.settings = nodeValue.settings || {}
+    nodeValue.settings.argumentOrdering = _.concat(
+      _.difference(nodeValue.settings.argumentOrdering, Object.keys(referenceNode.inputPorts)),
+      _.intersection(referenceNode.settings.argumentOrdering, Object.keys(referenceNode.inputPorts))
+    )
+  }
 }
 
 /**
  * Adds all output ports of the given reference node to the given node, if they don't exist yet.
+ * Also ensures that the argumentOrdering of the output ports is the same as in the reference node.
  */
-function ensureOutputPorts (graph, node, referenceNode) {
-  Object.keys(graph.node(referenceNode).outputPorts).forEach((port) => {
-    if (!graph.node(node).outputPorts[port]) {
-      createOutputPort(graph, node, port, graph.node(referenceNode).outputPorts[port])
+function ensureOutputPorts (graph, node, referenceNodeId) {
+  const nodeValue = graph.node(node)
+  const referenceNode = graph.node(referenceNodeId)
+
+  Object.keys(referenceNode.outputPorts).forEach((port) => {
+    if (!nodeValue.outputPorts[port]) {
+      createOutputPort(graph, node, port, referenceNode.outputPorts[port])
     }
   })
+
+  if (referenceNode.settings && referenceNode.settings.argumentOrdering) {
+    nodeValue.settings = nodeValue.settings || {}
+    nodeValue.settings.argumentOrdering = _.concat(
+      _.difference(nodeValue.settings.argumentOrdering, Object.keys(referenceNode.outputPorts)),
+      _.intersection(referenceNode.settings.argumentOrdering, Object.keys(referenceNode.outputPorts))
+    )
+  }
 }
 
 /**
@@ -161,8 +185,8 @@ function mergeLambdas (graph, lambdaFunctions) {
     Object.keys(graph.node(lambdaImpl).inputPorts).forEach((port) => {
       createEdge(graph, { node: firstLambdaImpl, port }, { node: lambdaImpl, port })
     })
+    ensureOutputPorts(graph, firstLambdaImpl, lambdaImpl)
     Object.keys(graph.node(lambdaImpl).outputPorts).forEach((port) => {
-      ensureOutputPorts(graph, firstLambdaImpl, lambdaImpl)
       createEdge(graph, { node: lambdaImpl, port }, { node: firstLambdaImpl, port })
     })
     unpackCompoundNode(graph, lambdaImpl)
@@ -181,6 +205,17 @@ function propagatePortType (graph, { node, port }) {
   }
 }
 
+/**
+ * Ensures that the order of <x>_new output ports matches the order of
+ * <x> input ports of the specified node.
+ */
+function fixNewOutputPortsOrdering (graph, n) {
+  const node = graph.node(n)
+  const inputPorts = _.intersection(node.settings.argumentOrdering, Object.keys(node.inputPorts))
+  const expectedOutputPorts = inputPorts.map((p) => `${p}_new`)
+  node.settings.argumentOrdering = _.concat(inputPorts, expectedOutputPorts)
+}
+
 export function rewriteTailRecursionToLoop (graph, node, match) {
   const predicateLambdas = match.predicates.map((predicate) => {
     const controlLambda = extractIntoLambda(graph, node, predicate.control)
@@ -193,7 +228,7 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
       const input1LambdaImpl = graph.children(input1Lambda)[0]
       ensureInputPorts(graph, input1LambdaImpl, node)
 
-      renamePort(graph, input1LambdaImpl, Object.keys(graph.node(graph.children(input1Lambda)[0]).outputPorts)[0], `${predicate.input1.predecessor.port}_new`)
+      renamePort(graph, input1LambdaImpl, Object.keys(graph.node(input1LambdaImpl).outputPorts)[0], `${predicate.input1.predecessor.port}_new`)
       input1LambdaRelevantPort = predicate.input1.predecessor.port
 
       _.forOwn(graph.node(input1LambdaImpl).inputPorts, (type, port) => {
@@ -202,6 +237,8 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
           createEdge(graph, { node: input1LambdaImpl, port: port }, { node: input1LambdaImpl, port: `${port}_new` })
         }
       })
+
+      fixNewOutputPortsOrdering(graph, input1LambdaImpl)
     }
 
     let input2Lambda
@@ -211,7 +248,7 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
       const input2LambdaImpl = graph.children(input2Lambda)[0]
       ensureInputPorts(graph, input2LambdaImpl, node)
 
-      renamePort(graph, graph.children(input2Lambda)[0], Object.keys(graph.node(graph.children(input2Lambda)[0]).outputPorts)[0], `${predicate.input2.predecessor.port}_new`)
+      renamePort(graph, input2LambdaImpl, Object.keys(graph.node(input2LambdaImpl).outputPorts)[0], `${predicate.input2.predecessor.port}_new`)
       input2LambdaRelevantPort = predicate.input2.predecessor.port
 
       _.forOwn(graph.node(input2LambdaImpl).inputPorts, (type, port) => {
@@ -220,6 +257,8 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
           createEdge(graph, { node: input2LambdaImpl, port: port }, { node: input2LambdaImpl, port: `${port}_new` })
         }
       })
+
+      fixNewOutputPortsOrdering(graph, input2LambdaImpl)
     }
 
     return {
@@ -238,6 +277,7 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
     return Object.keys(graph.node(tailcall).inputPorts).map((port) => {
       let lambda = extractIntoLambda(graph, node, walk.predecessor(graph, tailcall, port)[0])
       const lambdaImpl = graph.children(lambda)[0]
+      renamePort(graph, lambdaImpl, Object.keys(graph.node(lambdaImpl).outputPorts)[0], `${port}_new`)
       ensureInputPorts(graph, lambdaImpl, node)
       return { tailcall, lambda, port }
     })
@@ -247,6 +287,8 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
     mergeLambdas(graph, parameterLambdas.map((p) => p.lambda)) // merge parameter lambdas that belong to the same tail call
   )
   // calculateParameters now maps the tail call nodes to lambda functions that calculate the parameters for them
+
+  _.each(calculateParameters, (lambda) => fixNewOutputPortsOrdering(graph, graph.children(lambda)[0]))
 
   const tailrecNode = `${node}_tailrec`
   graph.setNode(tailrecNode, {
@@ -318,10 +360,10 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
       propagatePortType(graph, { node: predicate.lambda.input2, port: 'fn' })
     }
   })
-  _.each(calculateParameters, ((lambda) => {
+  _.each(calculateParameters, (lambda) => {
     graph.node(lambda).outputPorts.fn = getLambdaFunctionType(graph, lambda)
     propagatePortType(graph, { node: lambda, port: 'fn' })
-  }))
+  })
 
   deepRemoveNode(graph, node)
 }
