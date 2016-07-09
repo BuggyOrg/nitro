@@ -4,18 +4,18 @@ import { realPredecessors } from '../util/realWalk'
 import { atomicSuccessorsInPort } from '../util/atomicWalk'
 
 export function any (options = {}) {
-  return (graph, node) => {
+  return (graph, node, port) => {
     if (options.requireNode === false || graph.hasNode(node)) {
-      return { node }
+      return { node, inPort: port }
     }
     return false
   }
 }
 
 export function oneOf (...rules) {
-  return (graph, n) => {
+  return (graph, n, port) => {
     for (let i = 0; i < rules.length; i++) {
-      let match = rules[i](graph, n)
+      let match = rules[i](graph, n, port)
       if (match !== false) {
         return match
       }
@@ -25,10 +25,10 @@ export function oneOf (...rules) {
 }
 
 export function byIdAndInputs (id, inputs = {}) {
-  return (graph, n) => {
+  return (graph, n, port) => {
     const node = graph.node(n)
     if (node && node.id === id) {
-      const match = { node: n, inputs: {} }
+      const match = { node: n, inputs: {}, inPort: port }
 
       if (_.isArray(inputs)) {
         match.inputs = []
@@ -39,19 +39,21 @@ export function byIdAndInputs (id, inputs = {}) {
             let predecessors = realPredecessors(graph, n, inputPort)
             const tryMatchPredecessor = ({node, port}) => {
               if (_.isFunction(inputMatcher)) {
-                const inputMatch = inputMatcher(graph, node)
+                const inputMatch = inputMatcher(graph, node, port)
                 if (inputMatch !== false) {
                   match.inputs[index] = inputMatch
                   match.inputs[index].port = inputPort
+                  match.inputs[index].inPort = port
                   return true
                 } else {
                   return false
                 }
               } else {
-                const inputMatch = inputMatcher.match(graph, node)
+                const inputMatch = inputMatcher.match(graph, node, port)
                 if (inputMatch !== false) {
                   match.inputs[inputMatcher.alias || index] = inputMatch
                   match.inputs[inputMatcher.alias || index].port = inputPort
+                  match.inputs[inputMatcher.alias || index].inPort = port
                   return true
                 } else {
                   return false
@@ -79,19 +81,21 @@ export function byIdAndInputs (id, inputs = {}) {
           const tryMatchPredecessor = ({node, port}) => {
             let inputMatcher = inputs[inputPort]
             if (_.isFunction(inputMatcher)) {
-              const inputMatch = inputMatcher(graph, node)
+              const inputMatch = inputMatcher(graph, node, port)
               if (inputMatch !== false) {
                 match.inputs[inputPort] = inputMatch
                 match.inputs[inputPort].port = inputPort
+                match.inputs[inputPort].inPort = port
                 return true
               } else {
                 return false
               }
             } else {
-              const inputMatch = inputMatcher.match(graph, node)
+              const inputMatch = inputMatcher.match(graph, node, port)
               if (inputMatch !== false) {
                 match.inputs[inputMatcher.alias || inputPort] = inputMatch
                 match.inputs[inputMatcher.alias || inputPort].port = inputPort
+                match.inputs[inputMatcher.alias || inputPort].inPort = port
                 return true
               } else {
                 return false
@@ -113,10 +117,10 @@ export function byIdAndInputs (id, inputs = {}) {
 }
 
 export function constantNode (value, outputAlias) {
-  return (graph, n) => {
+  return (graph, n, port) => {
     const node = graph.node(n)
     if (node && (node.id === 'math/const' || node.id === 'std/const')) {
-      const match = { node: n, outputs: {} }
+      const match = { node: n, outputs: {}, inPort: port, port: Object.keys(node.outputPorts)[0] }
       match.outputs[outputAlias || Object.keys(node.outputPorts)[0]] = Object.keys(node.outputPorts)[0]
 
       if (_.isNumber(value)) {
@@ -133,7 +137,7 @@ export function constantNode (value, outputAlias) {
 }
 
 export function lambda (options = {}) {
-  return (graph, n) => {
+  return (graph, n, port) => {
     const node = graph.node(n)
 
     if (node && node.id === 'functional/lambda') {
@@ -160,7 +164,7 @@ export function lambda (options = {}) {
           return false
         }
       }
-      return { node: n }
+      return { node: n, inPort: port, port: Object.keys(node.outputPorts)[0] }
     }
     return false
   }
@@ -205,11 +209,11 @@ export function movable (matcher = any()) {
  */
 export function once (matcher) {
   let matched = false
-  return (graph, node) => {
+  return (graph, node, port) => {
     if (matched) {
       return false
     } else {
-      let match = matcher(graph, node)
+      let match = matcher(graph, node, port)
       if (match !== false) {
         matched = true
       }
@@ -220,20 +224,20 @@ export function once (matcher) {
 
 export function withState (fn) {
   const vars = {}
-  return (graph, node) => {
+  return (graph, node, port) => {
     const state = {
       set (variable, matcher) {
-        return (graph, node) => {
-          const match = matcher(graph, node)
+        return (graph, node, port) => {
+          const match = matcher(graph, node, port)
           vars[variable] = match
           return match
         }
       },
 
       get (variable) {
-        return (graph, node) => {
-          if (vars[variable] != null && vars[variable] !== false && vars[variable].node === node) {
-            return { node }
+        return (graph, node, port) => {
+          if (vars[variable] != null && vars[variable] !== false && vars[variable].node === node && port != null && vars[variable].inPort === port) {
+            return vars[variable]
           } else {
             return false
           }
@@ -241,22 +245,22 @@ export function withState (fn) {
       },
 
       getOrSet (variable, matcher) {
-        return (graph, node) => {
+        return (graph, node, port) => {
           if (vars[variable] != null) {
-            if (vars[variable] !== false && vars[variable].node === node) {
-              return { node }
+            if (vars[variable] !== false && vars[variable].node === node && port != null && vars[variable].inPort === port) {
+              return vars[variable]
             } else {
               return false
             }
           } else {
-            const match = matcher(graph, node)
+            const match = matcher(graph, node, port)
             vars[variable] = match
             return match
           }
         }
       }
     }
-    return fn(state)(graph, node)
+    return fn(state)(graph, node, port)
   }
 }
 
