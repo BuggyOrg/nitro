@@ -102,8 +102,8 @@ export function extractIntoLambda (graph, trNode, { node, port }) {
             // input port of the new lamba function, if it doesn't exist, yet
             if (!tryGetInputPort(graph, lambdaImpl, predecessor.port)) {
               createInputPort(graph, lambdaImpl, predecessor.port, graph.node(node).inputPorts[port])
-              createEdge(graph, { node: lambdaImpl, port: predecessor.port }, { node: nodeMappings[node], port })
             }
+            createEdge(graph, { node: lambdaImpl, port: predecessor.port }, { node: nodeMappings[node], port })
           }
         })
       })
