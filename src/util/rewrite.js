@@ -140,9 +140,31 @@ export function replaceNode (graph, node, newValue, portRewrites) {
 }
 
 /**
+ * Checks if the given compound node is not required in the given graph.
+ * @param graph graph
+ * @param n name of the compound node to check
+ * @returns true if the node is unnecessary, false if not
+ */
+export function isUnnecessaryCompound (graph, n) {
+  const node = graph.node(n)
+  const parent = graph.node(graph.parent(n))
+  if (node &&
+      !node.recursive && !node.recursesTo && !node.recursiveRoot &&
+      !node.atomic &&
+      node.id !== 'functional/lambda' &&
+      !(parent && parent.id === 'functional/lambda')) {
+      // Object.keys(node.inputPorts || {}).every((p) => walk.predecessor(graph, n, p).length > 0) &&
+      // Object.keys(node.outputPorts || {}).every((p) => walk.successor(graph, n, p).length > 0)) {
+    return true
+  } else {
+    return false
+  }
+}
+
+/**
  * Unpacks and removes a compound node.
  * @param graph graph
- * @param n name of the compound node to unpack
+ * @param node name of the compound node to unpack
  */
 export function unpackCompoundNode (graph, node) {
   let children = graph.children(node)

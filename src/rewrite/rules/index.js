@@ -4,26 +4,7 @@ import * as logicRules from './logic'
 import * as functionalRules from './functional'
 import * as compoundRules from './compounds'
 import * as deadCode from './deadCode'
-
-function mapRules (functions) {
-  return Object.keys(functions).map((r, i) => {
-    const rule = functions[r]
-    if (_.isArray(rule)) {
-      return rule.map((fn) => ({
-        id: (fn.meta ? fn.meta.id : null) || `${r}_${i}`,
-        name: (fn.meta ? fn.meta.name : null) || `${r}_${i}`,
-        apply: fn
-      }))
-    } else {
-      const fn = rule
-      return {
-        id: (fn.meta ? fn.meta.id : null) || r,
-        name: (fn.meta ? fn.meta.name : null) || r,
-        apply: fn
-      }
-    }
-  })
-}
+import { mapRules } from '../rewrite'
 
 export default _.keyBy(_.flattenDeep([
   mapRules(mathRules),

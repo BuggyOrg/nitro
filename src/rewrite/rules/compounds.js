@@ -1,27 +1,13 @@
 import { walk } from '@buggyorg/graphtools'
-import { unpackCompoundNode, moveNodeInto, createEdge, removePort } from '../../util/rewrite'
+import { isUnnecessaryCompound, unpackCompoundNode, moveNodeInto, createEdge, removePort } from '../../util/rewrite'
 import { rule, match } from '../rewrite'
 import { childrenDeep, isSamePort } from '../../util/graph'
 import { realPredecessors } from '../../util/realWalk'
 import { matchTailRecursiveCompound, rewriteTailRecursionToLoop } from './tailrecursion'
 
 export const removeUnnecessaryCompoundNodes = rule(
-  (graph, n) => {
-    const node = graph.node(n)
-    const parent = graph.node(graph.parent(n))
-    if (node &&
-        !node.recursive && !node.recursesTo && !node.recursiveRoot &&
-        !node.atomic &&
-        node.id !== 'functional/lambda' &&
-        !(parent && parent.id === 'functional/lambda')) {
-        // Object.keys(node.inputPorts || {}).every((p) => walk.predecessor(graph, n, p).length > 0) &&
-        // Object.keys(node.outputPorts || {}).every((p) => walk.successor(graph, n, p).length > 0)) {
-      return { node }
-    } else {
-      return false
-    }
-  },
-  (graph, node) => unpackCompoundNode(graph, node),
+  isUnnecessaryCompound,
+  (graph, node) => unpackCompoundNode(graph, node) ? { node } : false,
   { name: 'remove unnecessary compounds' }
 )
 
