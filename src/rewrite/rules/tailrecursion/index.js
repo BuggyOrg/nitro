@@ -5,6 +5,7 @@ import { childrenDeep } from '../../../util/graph'
 import { createEdge, createInputPort, createOutputPort, tryGetInputPort, moveNodeInto, unpackCompoundNode,
          createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deepRemoveNode, renamePort } from '../../../util/rewrite'
 import { copyNodeInto } from '../../../util/copy'
+import * as nodeCreator from '../../nodes'
 
 /**
  * Checks if the given node is a tail-recursive compound node.
@@ -71,15 +72,7 @@ export function matchTailRecursiveCompound (graph, n) {
  */
 export function extractIntoLambda (graph, trNode, { node, port }) {
   const lambda = `${node}_${_.uniqueId('copy_')}`
-  graph.setNode(lambda, {
-    id: 'functional/lambda',
-    version: '0.2.0',
-    atomic: true,
-    outputPorts: { fn: 'function' },
-    settings: {
-      argumentOrdering: [ 'fn' ]
-    }
-  })
+  graph.setNode(lambda, nodeCreator.lambda())
   graph.setParent(lambda, graph.parent(trNode))
 
   const lambdaImpl = `${lambda}:impl`

@@ -2,7 +2,7 @@ import { rule, match, replace } from '../rewrite'
 import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge, moveNodeInto, removeEdge, setNodeAt } from '../../util/rewrite'
 import { allEqual } from '../../util/check'
 import { copyNode } from '../../util/copy'
-import { constantBool } from '../nodes'
+import { constantBool, constantNumber, constantString } from '../nodes'
 
 export const replaceConstantCalculations = rule(
   match.oneOf(
@@ -18,16 +18,7 @@ export const replaceConstantCalculations = rule(
     }
 
     return {
-      node: {
-        id: 'math/const',
-        version: '0.2.0',
-        inputPorts: {},
-        outputPorts: { output: 'number' },
-        atomic: true,
-        path: [],
-        params: { value: evaluators[graph.node(node).id](graph.node(match.inputs.a.node), graph.node(match.inputs.b.node)) },
-        name: 'const'
-      },
+      node: constantNumber(evaluators[graph.node(node).id](graph.node(match.inputs.a.node), graph.node(match.inputs.b.node))),
       rewriteOutputPorts: [{
         oldPort: Object.keys(graph.node(node).outputPorts)[0],
         newPort: 'output'
@@ -41,16 +32,7 @@ export const replaceMultiplicationWithZero = rule(
   match.byIdAndInputs('math/multiply', [ match.constantNode(0), match.any() ]),
   replace.withNode((graph, node, match) => {
     return {
-      node: {
-        id: 'math/const',
-        version: '0.2.0',
-        inputPorts: {},
-        outputPorts: { output: 'number' },
-        atomic: true,
-        path: [],
-        params: { value: 0 },
-        name: 'const'
-      },
+      node: constantNumber(0),
       rewriteOutputPorts: [{
         oldPort: Object.keys(graph.node(node).outputPorts)[0],
         newPort: 'output'
@@ -87,16 +69,7 @@ export const replaceConstantNumberToString = rule(
   match.byIdAndInputs('translator/number_to_string', { input: match.byIdAndInputs('math/const') }),
   replace.withNode((graph, node, match) => {
     return {
-      node: {
-        id: 'string/const',
-        version: '0.2.0',
-        inputPorts: {},
-        outputPorts: { output: 'string' },
-        atomic: true,
-        path: [],
-        params: { value: `${graph.node(match.inputs.input.node).params.value}` },
-        name: 'const'
-      },
+      node: constantString(`${graph.node(match.inputs.input.node).params.value}`),
       rewriteOutputPorts: [{
         oldPort: 'output',
         newPort: 'output'
