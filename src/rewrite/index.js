@@ -29,9 +29,26 @@ function decompoundify (graph) {
 }
 
 function removeRootCompounds (graph) {
-  // TODO more rules could apply if this would remove the outermost compounds, which are not necessarily the root compounds
   const rootCompounds = graph.nodes()
-    .filter((n) => graph.parent(n) == null)
+    .filter((n) => {
+      const parent = graph.parent(n)
+      if (parent != null) {
+        const parentValue = graph.node(parent)
+        if (parentValue.recursiveRoot) {
+          return true
+        } else {
+          const parentParent = graph.parent(parent)
+          if (parentParent != null && graph.node(parentParent).id === 'functional/lambda') {
+            // parent is the implementation of a lambda function
+            return true
+          } else {
+            return false
+          }
+        }
+      } else {
+        return true
+      }
+    })
     .filter(isUnnecessaryCompound.bind(null, graph))
   rootCompounds.forEach(unpackCompoundNode.bind(null, graph))
   return rootCompounds.length
