@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@git.gdv.uni-hannover.de:mmarschner/buggy-const-rewrite.git"
+    "url": "git@github.com:BuggyOrg/nitro.git"
   },
   "author": "Maik Marschner",
   "license": "MIT",
