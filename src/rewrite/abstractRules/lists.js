@@ -8,8 +8,8 @@ import createSubgraph from '../../util/subgraphCreator'
 export const replaceHeadAfterMap = rule(
   match.once(match.byIdAndInputs('array/first', {
     array: match.byIdAndInputs('map', {
-      list: match.any(),
-      fn: match.any()
+      list: match.any({ requireNode: false }),
+      fn: match.any({ requireNode: false })
     })
   })),
   (graph, node, match) => {
