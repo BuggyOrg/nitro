@@ -1,7 +1,8 @@
 import _ from 'lodash'
 import { rule, match } from '../rewrite'
-import { createEdgeToEachSuccessor, deleteUnusedPredecessors, createEdge, setNodeAt } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, deleteUnusedPredecessors } from '../../util/rewrite'
 import * as nodeCreators from '../nodes'
+import createSubgraph from '../../util/subgraphCreator'
 
 export const replaceHeadAfterMap = rule(
   match.once(match.byIdAndInputs('array/first', {
@@ -11,18 +12,31 @@ export const replaceHeadAfterMap = rule(
     })
   })),
   (graph, node, match) => {
-    const partial = `${node}_${_.uniqueId('partial_')}`
-    setNodeAt(graph, partial, node, nodeCreators.partial())
-    const call = `${node}_${_.uniqueId('call_')}`
-    setNodeAt(graph, call, node, nodeCreators.call())
-    const first = `${node}_${_.uniqueId('first_')}`
-    setNodeAt(graph, first, node, nodeCreators.arrayFirst())
+    const subgraph = createSubgraph(graph, graph.parent(node), {
+      node: nodeCreators.call(),
+      predecessors: {
+        fn: {
+          node: nodeCreators.partial(),
+          predecessors: {
+            value: {
+              node: nodeCreators.arrayFirst(),
+              predecessors: {
+                array: {
+                  node: match.inputs.array.inputs.list.node,
+                  port: match.inputs.array.inputs.list.inPort
+                }
+              }
+            },
+            fn: {
+              node: match.inputs.array.inputs.fn.node,
+              port: match.inputs.array.inputs.fn.inPort
+            }
+          }
+        }
+      }
+    })
 
-    createEdge(graph, { node: match.inputs.array.inputs.list.node, port: match.inputs.array.inputs.list.inPort }, first)
-    createEdge(graph, first, { node: partial, port: 'value' })
-    createEdge(graph, { node: match.inputs.array.inputs.fn.node, port: match.inputs.array.inputs.fn.inPort }, { node: partial, port: 'fn' })
-    createEdge(graph, partial, call)
-    createEdgeToEachSuccessor(graph, call, match.node)
+    createEdgeToEachSuccessor(graph, subgraph.node, match.node)
 
     deleteUnusedPredecessors(graph, match.node)
     graph.removeNode(match.node)

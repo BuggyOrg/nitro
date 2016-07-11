@@ -45,8 +45,20 @@ function getOutputPort (graph, output) {
  * @param value value to set the node to
  */
 export function setNodeAt (graph, node, contextNode, value) {
+  setNodeIn(graph, node, graph.parent(contextNode), value)
+}
+
+/**
+ * Sets the value of the given node in the given graph and sets
+ * the parent to the given parent node.
+ * @param graph graph
+ * @param node name of the node to set
+ * @param parentNode new parent of the modified node
+ * @param value value to set the node to
+ */
+export function setNodeIn (graph, node, parentNode, value) {
   graph.setNode(node, value)
-  graph.setParent(node, graph.parent(contextNode))
+  graph.setParent(node, parentNode)
 }
 
 /**
