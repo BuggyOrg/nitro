@@ -4,11 +4,10 @@ import { realPredecessors } from '../util/realWalk'
 import { atomicSuccessorsInPort } from '../util/atomicWalk'
 
 export function any (options = {}) {
-  return (graph, node, port) => {
-    if (options.requireNode === false || graph.hasNode(node)) {
-      return { node, inPort: port }
-    }
-    return false
+  if (options.requireNode === false) {
+    return (graph, node, port) => ({ node, inPort: port })
+  } else {
+    return (graph, node, port) => graph.hasNode(node) ? { node, inPort: port } : false
   }
 }
 
