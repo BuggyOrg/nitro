@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import { walk } from '@buggyorg/graphtools'
 import { rule, match } from '../rewrite'
 import { createEdgeToEachSuccessor, deleteUnusedPredecessors } from '../../util/rewrite'
 import * as nodeCreators from '../nodes'
@@ -21,16 +22,10 @@ export const replaceHeadAfterMap = rule(
             value: {
               node: nodeCreators.arrayFirst(),
               predecessors: {
-                array: {
-                  node: match.inputs.array.inputs.list.node,
-                  port: match.inputs.array.inputs.list.inPort
-                }
+                array: walk.predecessor(graph, match.inputs.array.node, 'list')[0]
               }
             },
-            fn: {
-              node: match.inputs.array.inputs.fn.node,
-              port: match.inputs.array.inputs.fn.inPort
-            }
+            fn: walk.predecessor(graph, match.inputs.array.node, 'fn')[0]
           }
         }
       }
