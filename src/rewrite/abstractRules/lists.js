@@ -142,3 +142,97 @@ export const concatenateFilters = rule(
     )
   }
 )
+
+export const concatenateMaps = rule(
+  match.once(match.byIdAndInputs('map', {
+    list: match.byIdAndInputs('map', {
+      list: match.any(),
+      fn: match.any()
+    }),
+    fn: match.any()
+  })),
+  (graph, node, match) => {
+    const lambda = setNodeAt(graph, `${match.node}_lambda_concat`, match.node, nodeCreators.lambda())
+    const lambdaImpl = setNodeIn(graph, `${lambda}:impl`, lambda, {
+      id: `${lambda}:impl`,
+      inputPorts: {
+        f1: graph.node(match.inputs.list.inputs.fn.node).outputPorts[0] || 'function',
+        f2: graph.node(match.inputs.fn.node).outputPorts[0] || 'function',
+        element: _.values(_.values(graph.node(match.inputs.fn.node).outputPorts)[0].arguments)[0] || 'generic'
+      },
+      outputPorts: {
+        result: _.values(_.values(graph.node(match.inputs.fn.node).outputPorts)[0].outputs)[0]
+      },
+      settings: {
+        argumentOrdering: ['f1', 'f2', 'element', 'result']
+      }
+    })
+    graph.node(lambda).outputPorts['fn'] = getLambdaFunctionType(graph, lambda)
+
+    createSubgraph(graph, lambdaImpl, {
+      node: nodeCreators.call(),
+      predecessors: {
+        fn: {
+          node: nodeCreators.partial(0),
+          predecessors: {
+            fn: { node: lambdaImpl, port: 'f2' },
+            value: {
+              node: nodeCreators.call(),
+              predecessors: {
+                fn: {
+                  node: nodeCreators.partial(0),
+                  predecessors: {
+                    fn: { node: lambdaImpl, port: 'f1' },
+                    value: { node: lambdaImpl, port: 'element' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      successors: {
+        result: { node: lambdaImpl, port: 'result' }
+      }
+    })
+
+    createSubgraph(graph, graph.parent(node), {
+      node: nodeCreators.partial(0),
+      predecessors: {
+        fn: {
+          node: nodeCreators.partial(0),
+          predecessors: {
+            fn: lambda,
+            value: {
+              node: match.inputs.list.inputs.fn.node,
+              port: match.inputs.list.inputs.fn.inPort
+            }
+          }
+        },
+        value: {
+          node: match.inputs.fn.node,
+          port: match.inputs.fn.inPort
+        }
+      },
+      successors: {
+        result: {
+          node: match.node,
+          port: 'fn'
+        }
+      }
+    })
+
+    removeEdge(graph,
+      { node: match.inputs.fn.node, port: match.inputs.fn.inPort },
+      { node: node, port: match.inputs.fn.port }
+    )
+    removeEdge(graph,
+      { node: match.inputs.list.node, port: match.inputs.list.inPort },
+      { node: node, port: match.inputs.list.port }
+    )
+    createEdge(graph,
+      { node: match.inputs.list.inputs.list.node, port: match.inputs.list.inputs.list.inPort },
+      { node: node, port: 'list' }
+    )
+  }
+)
