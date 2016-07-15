@@ -8,6 +8,8 @@ export function createSubgraph (graph, context, subgraph, type = 'predecessor') 
     setNodeIn(graph, node, context, subgraph.node)
   } else if (_.isString(subgraph.node)) {
     node = subgraph.node
+  } else if (_.isString(subgraph)) {
+    node = subgraph
   } else {
     throw new Error('Unexpected node value ' + subgraph.node)
   }
