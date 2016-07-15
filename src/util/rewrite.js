@@ -43,9 +43,10 @@ function getOutputPort (graph, output) {
  * @param node name of the node to set
  * @param contextNode node whose parent should become the parent of the modified node
  * @param value value to set the node to
+ * @returns the name of the node that was set
  */
 export function setNodeAt (graph, node, contextNode, value) {
-  setNodeIn(graph, node, graph.parent(contextNode), value)
+  return setNodeIn(graph, node, graph.parent(contextNode), value)
 }
 
 /**
@@ -55,10 +56,12 @@ export function setNodeAt (graph, node, contextNode, value) {
  * @param node name of the node to set
  * @param parentNode new parent of the modified node
  * @param value value to set the node to
+ * @returns the name of the node that was set
  */
 export function setNodeIn (graph, node, parentNode, value) {
   graph.setNode(node, value)
   graph.setParent(node, parentNode)
+  return node
 }
 
 /**
