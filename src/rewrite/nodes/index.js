@@ -124,3 +124,23 @@ export function arrayFirst () {
     }
   }
 }
+
+export function logicNot () {
+  return {
+    id: 'logic/not',
+    version: '0.2.0',
+    inputPorts: {
+      input: 'bool'
+    },
+    outputPorts: {
+      output: 'bool'
+    },
+    atomic: true,
+    settings: {
+      argumentOrdering: [
+        'input',
+        'output'
+      ]
+    }
+  }
+}

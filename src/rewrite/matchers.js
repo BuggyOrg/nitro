@@ -259,3 +259,12 @@ export function byIdAndSameInputs (id, ports, inputMatcher) {
     byIdAndInputs(id, _.zipObject(ports, _.map(ports, () => state.getOrSet('p', inputMatcher))))
   )
 }
+
+export function type (type, matcher = any()) {
+  return (graph, node, port) => {
+    if (graph.node(node).outputPorts[port] === type) {
+      return matcher(graph, node, port)
+    }
+    return false
+  }
+}

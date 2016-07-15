@@ -1,7 +1,8 @@
 import { rule, match, replace } from '../rewrite'
 import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge, setNodeAt } from '../../util/rewrite'
 import { matchInvertableNode, invertNode } from './invertable'
-import { constantBool } from '../nodes'
+import { constantBool, logicNot } from '../nodes'
+import createSubgraph from '../../util/subgraphCreator'
 
 export const replaceConstantAnd = rule(
   match.byIdAndInputs('logic/and', { i1: match.constantNode(), i2: match.constantNode() }),
@@ -282,4 +283,43 @@ export const replaceNegatedOrWithInvertableInputs = rule(
 export const removeId = rule(
   match.byIdAndInputs('std/id'),
   replace.removeNode([{ fromPort: 'input', toPort: 'output' }])
+)
+
+export const replaceRedundantMux = rule(
+  match.byIdAndInputs('logic/mux', {
+    control: match.type('bool'),
+    input1: match.constantNode(true),
+    input2: match.constantNode(false)
+  }),
+  (graph, node, match) => {
+    createEdgeToEachSuccessor(graph,
+      { node: match.inputs.control.node, port: match.inputs.control.inPort },
+      node
+    )
+    deleteUnusedPredecessors(graph, node)
+    graph.removeNode(node)
+  }
+)
+
+export const replaceRedundantInverseMux = rule(
+  match.byIdAndInputs('logic/mux', {
+    control: match.type('bool'),
+    input1: match.constantNode(false),
+    input2: match.constantNode(true)
+  }),
+  (graph, node, match) => {
+    const subgraph = createSubgraph(graph, graph.parent(node), {
+      node: logicNot(),
+      predecessors: {
+        input: {
+          node: match.inputs.control.node,
+          port: match.inputs.control.inPort
+        }
+      }
+    })
+
+    createEdgeToEachSuccessor(graph, subgraph.node, node)
+    deleteUnusedPredecessors(graph, node)
+    graph.removeNode(node)
+  }
 )
