@@ -71,30 +71,32 @@ export function setNodeIn (graph, node, parentNode, value) {
  * @param node name of the node to remove all unused predecessors of
  */
 export function deleteUnusedPredecessors (graph, node) {
-  const nodeValue = graph.node(node)
-  Object.keys(nodeValue.inputPorts || {}).forEach((port) => {
-    walk.predecessor(graph, node, port).forEach((predecessor) => {
-      if (graph.parent(node) === predecessor.node) {
-        // this is an input port of a parent node
-        const successors = atomicSuccessorsInPort(graph, predecessor.node, predecessor.port)
-        if (successors.length <= 1 || successors.every((s) => s.node === node)) {
-          deepRemoveNode(graph, predecessor.node)
+  if ((graph.node(graph.parent(graph.parent(node))) || {}).id !== 'functional/lambda') {
+    const nodeValue = graph.node(node)
+    Object.keys(nodeValue.inputPorts || {}).forEach((port) => {
+      walk.predecessor(graph, node, port).forEach((predecessor) => {
+        if (graph.parent(node) === predecessor.node) {
+          // this is an input port of a parent node
+          const successors = atomicSuccessorsInPort(graph, predecessor.node, predecessor.port)
+          if (successors.length <= 1 || successors.every((s) => s.node === node)) {
+            deepRemoveNode(graph, predecessor.node)
+          }
+        } else {
+          // real predecessor node
+          const successors = atomicSuccessorsInPort(graph, predecessor.node, predecessor.port)
+          if (successors.length <= 1 || successors.every((s) => s.node === node)) {
+            deepRemoveNode(graph, predecessor.node)
+            graph.removeNode(predecessor.node)
+          }
         }
-      } else {
-        // real predecessor node
-        const successors = atomicSuccessorsInPort(graph, predecessor.node, predecessor.port)
-        if (successors.length <= 1 || successors.every((s) => s.node === node)) {
-          deepRemoveNode(graph, predecessor.node)
-          graph.removeNode(predecessor.node)
-        }
-      }
 
-      if (walk.successor(graph, node, port).length <= 1 &&
-          walk.predecessor(graph, node, port).length === 0) {
-        delete nodeValue.inputPorts[port]
-      }
+        if (walk.successor(graph, node, port).length <= 1 &&
+            walk.predecessor(graph, node, port).length === 0) {
+          delete nodeValue.inputPorts[port]
+        }
+      })
     })
-  })
+  }
 }
 
 /**
