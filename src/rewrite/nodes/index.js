@@ -144,3 +144,23 @@ export function logicNot () {
     }
   }
 }
+
+export function logicMux () {
+  return {
+    id: 'logic/mux',
+    inputPorts: {
+      input1: 'generic',
+      input2: 'generic',
+      control: 'bool'
+    },
+    outputPorts: {
+      output: 'generic'
+    },
+    atomic: true,
+    version: '0.3.0',
+    specialForm: true,
+    settings: {
+      argumentOrdering: ['input1', 'input2', 'control', 'output']
+    }
+  }
+}
