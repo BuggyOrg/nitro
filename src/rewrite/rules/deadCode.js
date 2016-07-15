@@ -33,7 +33,10 @@ export const removeUnusedBranches = (graph) => {
       ),
       graph.children(n)
     ).forEach((node) => {
-      if (!requiredNodes[node]) {
+      if (!requiredNodes[node] &&
+        (Object.keys(graph.node(node).outputPorts || {}).some((port) => walk.successor(graph, node, port).some(({node}) => requiredNodes[node])) ||
+         (graph.node(graph.parent(node)) || {}).id === 'functional/lambda')
+      ) {
         requiredNodes[node] = true
         markPredecessorsAndChildren(node)
       }
