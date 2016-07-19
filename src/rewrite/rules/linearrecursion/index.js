@@ -10,6 +10,10 @@ import * as nodeCreator from '../../nodes'
 const knownMonoids = [
   {
     operation: 'math/multiply',
+    neutralElement: () => nodeCreator.constantNumber(1)
+  },
+  {
+    operation: 'math/add',
     neutralElement: () => nodeCreator.constantNumber(0)
   }
 ]
