@@ -4,6 +4,7 @@ import { rule, match } from '../rewrite'
 import { childrenDeep, isSamePort } from '../../util/graph'
 import { realPredecessors } from '../../util/realWalk'
 import { matchTailRecursiveCompound, rewriteTailRecursionToLoop } from './tailrecursion'
+import { matchLinearRecursiveCompound, rewriteLinearRecursionToTailRecursion } from './linearrecursion'
 
 export const removeUnnecessaryCompoundNodes = rule(
   isUnnecessaryCompound,
@@ -52,7 +53,14 @@ export const moveInputsIntoRecursiveCompounds = rule(
 
 export const tailRecursionToLoop = rule(
   matchTailRecursiveCompound,
+  rewriteTailRecursionToLoop
+)
+
+export const linearRecursionToTailRecursion = rule(
+  match.once(matchLinearRecursiveCompound),
   (graph, node, match) => {
-    rewriteTailRecursionToLoop(graph, node, match)
+    console.error('found linear recursion', JSON.stringify(match, null, 2))
+    // TODO
   }
+  // rewriteLinearRecursionToTailRecursion
 )

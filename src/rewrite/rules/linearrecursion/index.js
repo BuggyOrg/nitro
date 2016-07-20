@@ -62,12 +62,36 @@ export function matchLinearRecursiveCompound (graph, n) {
         predicates.push(predicate)
 
         return [walkMuxChain(p.node, 'input1'), walkMuxChain(p.node, 'input2')]
-      } else if (predecessor.id === compoundNode.id) {
-        return p.node
+      } else {
+        if (Object.keys(predecessor.inputPorts || {}).some((port) => {
+          const predecessor = walk.predecessor(graph, p.node, port)
+          return predecessor.length > 0 && graph.node(predecessor[0].node).id === compoundNode.id
+        })) {
+          if (associativeOperation) {
+            if (associativeOperation.operation === predecessor.id) {
+              return p.node
+            } else {
+              // TODO rewrite rule not applicable
+            }
+          } else {
+            associativeOperation = knownMonoids.find((m) => m.operation === predecessor.id)
+            if (associativeOperation) {
+              return p.node
+            } else {
+              // TODO rewrite rule not applicable
+            }
+          }
+        } else {
+          // TODO rewrite rule not applicable
+        }
       }
     })
   }
   const recursiveCalls = _.without(_.flattenDeep(walkMuxChain(n, Object.keys(compoundNode.outputPorts || {})[0])), n)
+  if (!associativeOperation) {
+    return false
+  }
+  console.error(recursiveCalls)
 
   // TODO
   if (_.difference(recursiveCalls, allRecursiveCalls).length === 0 && recursiveCalls.every((c) => {
