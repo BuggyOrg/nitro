@@ -58,9 +58,5 @@ export const tailRecursionToLoop = rule(
 
 export const linearRecursionToTailRecursion = rule(
   match.once(matchLinearRecursiveCompound),
-  (graph, node, match) => {
-    console.error('found linear recursion', JSON.stringify(match, null, 2))
-    // TODO
-  }
-  // rewriteLinearRecursionToTailRecursion
+  rewriteLinearRecursionToTailRecursion
 )

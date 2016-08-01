@@ -164,3 +164,21 @@ export function logicMux () {
     }
   }
 }
+
+export function multiply () {
+  return {
+    id: 'math/multiply',
+    inputPorts: {
+      m1: 'number',
+      m2: 'number'
+    },
+    outputPorts: {
+      product: 'number'
+    },
+    atomic: true,
+    version: '0.3.0',
+    settings: {
+      argumentOrdering: ['m1', 'm2', 'product']
+    }
+  }
+}
