@@ -46,7 +46,7 @@ export function matchTailRecursiveCompound (graph, n) {
       }
     })
   }
-  const tailcalls = _.without(_.flattenDeep(walkMuxChain(n, Object.keys(compoundNode.outputPorts || {})[0])), n)
+  const tailcalls = _.without(_.flattenDeep(walkMuxChain(n, Object.keys(compoundNode.outputPorts || {})[0])), n).filter((c) => c != null)
 
   // TODO more validation, every mux may only be used once
   // every recursive call should be a tail call and not be used otherwise
