@@ -21,6 +21,12 @@ const knownMonoids = [
   },
   {
     operation: 'math/add',
+    createOperation: (graph, a, b, context) => {
+      const node = setNodeAt(graph, _.uniqueId('associative_operation'), context, nodeCreator.add())
+      createEdge(graph, a, { node, port: 's1' })
+      createEdge(graph, b, { node, port: 's2' })
+      return node
+    },
     neutralElement: () => nodeCreator.constantNumber(0)
   }
 ]

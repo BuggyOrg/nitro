@@ -182,3 +182,21 @@ export function multiply () {
     }
   }
 }
+
+export function add () {
+  return {
+    id: 'math/add',
+    inputPorts: {
+      s1: 'number',
+      s2: 'number'
+    },
+    outputPorts: {
+      sum: 'number'
+    },
+    atomic: true,
+    version: '0.3.0',
+    settings: {
+      argumentOrdering: ['s1', 's2', 'sum']
+    }
+  }
+}
