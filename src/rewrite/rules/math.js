@@ -2,7 +2,7 @@ import { rule, match, replace } from '../rewrite'
 import { createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deleteUnusedPredecessors, createEdge, moveNodeInto, removeEdge, setNodeAt } from '../../util/rewrite'
 import { allEqual } from '../../util/check'
 import { copyNode } from '../../util/copy'
-import { constantBool, constantNumber, constantString } from '../nodes'
+import { constantBool, constantNumber, constantString, multiply } from '../nodes'
 
 export const replaceConstantCalculations = rule(
   match.oneOf(
@@ -103,32 +103,10 @@ export const rewriteMultipleMultiplication = rule(
   },
   (graph, node, match) => {
     const multiply1 = `${node}:rewritten:m1`
-    setNodeAt(graph, multiply1, node, {
-      'id': 'math/multiply',
-      'inputPorts': {
-        'm1': 'number',
-        'm2': 'number'
-      },
-      'outputPorts': {
-        'product': 'bool'
-      },
-      'atomic': true,
-      'version': '0.2.0'
-    })
+    setNodeAt(graph, multiply1, node, multiply())
 
     const multiply2 = `${node}:rewritten:m2`
-    setNodeAt(graph, multiply2, node, {
-      'id': 'math/multiply',
-      'inputPorts': {
-        'm1': 'number',
-        'm2': 'number'
-      },
-      'outputPorts': {
-        'product': 'bool'
-      },
-      'atomic': true,
-      'version': '0.2.0'
-    })
+    setNodeAt(graph, multiply2, node, multiply())
 
     createEdgeFromEachPredecessor(graph,
       { node: match.inputs[0].inputs[0].node, port: match.inputs[0].inputs[0].inputs[0].port },
