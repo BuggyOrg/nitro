@@ -127,7 +127,7 @@ function ensureInputPorts (graph, node, referenceNodeId) {
   const referenceNode = graph.node(referenceNodeId)
 
   Object.keys(referenceNode.inputPorts).forEach((port) => {
-    if (!nodeValue.inputPorts[port]) {
+    if (!(nodeValue.inputPorts || {})[port]) {
       createInputPort(graph, node, port, referenceNode.inputPorts[port])
     }
   })
@@ -150,7 +150,7 @@ function ensureOutputPorts (graph, node, referenceNodeId) {
   const referenceNode = graph.node(referenceNodeId)
 
   Object.keys(referenceNode.outputPorts).forEach((port) => {
-    if (!nodeValue.outputPorts[port]) {
+    if (!(nodeValue.outputPorts || {})[port]) {
       createOutputPort(graph, node, port, referenceNode.outputPorts[port])
     }
   })
