@@ -246,14 +246,32 @@ export function createEdgeFromEachPredecessor (graph, source, target) {
  * @param graph graph
  * @param node name of the node to remove
  */
-export function deepRemoveNode (graph, node) {
-  deleteUnusedPredecessors(graph, node)
+export function deepRemoveNode (graph, node) {  
+  const nodeValue = graph.node(node)
+  const predecessors = _.flattenDeep(Object.keys(nodeValue.inputPorts || {}).map((port) => walk.predecessor(graph, node, port)))
 
   const removeNodeAndChildren = (n) => {
     graph.children(n).forEach((c) => removeNodeAndChildren(c))
     graph.removeNode(n)
   }
   removeNodeAndChildren(node)
+
+  predecessors.forEach((predecessor) => {
+    if (graph.parent(node) === predecessor.node) {
+      // this is an input port of a parent node
+      const successors = atomicSuccessorsInPort(graph, predecessor.node, predecessor.port)
+      if (successors.length === 0 || successors.every((s) => s.node === node)) {
+        deepRemoveNode(graph, predecessor.node)
+      }
+    } else {
+      // real predecessor node
+      const successors = atomicSuccessorsInPort(graph, predecessor.node, predecessor.port)
+      if (successors.length === 0 || successors.every((s) => s.node === node)) {
+        deepRemoveNode(graph, predecessor.node)
+        graph.removeNode(predecessor.node)
+      }
+    }
+  })
 }
 
 export function movePredecessorsInto (graph, { node, port }, target) {
