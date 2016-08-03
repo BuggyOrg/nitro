@@ -15,7 +15,7 @@ export const removeUnnecessaryCompoundNodes = rule(
 export const moveInputsIntoRecursiveCompounds = rule(
   (graph, n) => {
     const node = graph.node(n)
-    if (node && !node.atomic) {
+    if (node && node.recursiveRoot) {
       // check if all recursive calls (and the initial call) have the same input at one port (and if this input can be moved)
       const recursiveCalls = childrenDeep(graph, n).filter((c) => graph.node(c).id === node.id)
       if (recursiveCalls.length === 0) {
@@ -23,7 +23,11 @@ export const moveInputsIntoRecursiveCompounds = rule(
       }
       const constantInputPort = Object.keys(node.inputPorts).find((port) => {
         const predecessor = realPredecessors(graph, n, port)
-        return predecessor.length === 1 && match.movable()(graph, predecessor[0].node) &&
+        
+        // the branch is movable if the only successor is this compound node and if the predecessor in the branch are also movable
+        return predecessor.length === 1 && Object.keys(graph.node(predecessor[0].node).inputPorts || {})
+                .every((port) => walk.predecessor(graph, predecessor[0].node, port).every((p) => match.movable()(graph, p.node))) &&
+               Object.keys(graph.node(predecessor[0].node).outputPorts || {}).every((port) => walk.successor(graph, predecessor[0].node, port).every((succ) => succ.node === n)) &&
                recursiveCalls.every((call) => {
                  const callPredecessor = realPredecessors(graph, call, port, { crossRecursiveBoundaries: true })
                  return callPredecessor.length === 1 && isSamePort(callPredecessor[0], predecessor[0])
