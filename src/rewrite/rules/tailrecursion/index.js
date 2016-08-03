@@ -221,13 +221,17 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
       const input1LambdaImpl = graph.children(input1Lambda)[0]
       ensureInputPorts(graph, input1LambdaImpl, node)
 
-      renamePort(graph, input1LambdaImpl, Object.keys(graph.node(input1LambdaImpl).outputPorts)[0], `${predicate.input1.predecessor.port}_new`)
-      input1LambdaRelevantPort = predicate.input1.predecessor.port
-
+      let relevantPortCreated = false
       _.forOwn(graph.node(input1LambdaImpl).inputPorts, (type, port) => {
         if (!graph.node(input1LambdaImpl).outputPorts[`${port}_new`]) {
-          createOutputPort(graph, input1LambdaImpl, `${port}_new`, type)
-          createEdge(graph, { node: input1LambdaImpl, port: port }, { node: input1LambdaImpl, port: `${port}_new` })
+          if (relevantPortCreated) {
+            createOutputPort(graph, input1LambdaImpl, `${port}_new`, type)
+            createEdge(graph, { node: input1LambdaImpl, port: port }, { node: input1LambdaImpl, port: `${port}_new` })
+          } else {
+            renamePort(graph, input1LambdaImpl, Object.keys(graph.node(input1LambdaImpl).outputPorts)[0], `${port}_new`)
+            input1LambdaRelevantPort = port
+            relevantPortCreated = true
+          }
         }
       })
 
@@ -241,13 +245,17 @@ export function rewriteTailRecursionToLoop (graph, node, match) {
       const input2LambdaImpl = graph.children(input2Lambda)[0]
       ensureInputPorts(graph, input2LambdaImpl, node)
 
-      renamePort(graph, input2LambdaImpl, Object.keys(graph.node(input2LambdaImpl).outputPorts)[0], `${predicate.input2.predecessor.port}_new`)
-      input2LambdaRelevantPort = predicate.input2.predecessor.port
-
+      let relevantPortCreated = false
       _.forOwn(graph.node(input2LambdaImpl).inputPorts, (type, port) => {
         if (!graph.node(input2LambdaImpl).outputPorts[`${port}_new`]) {
-          createOutputPort(graph, input2LambdaImpl, `${port}_new`, type)
-          createEdge(graph, { node: input2LambdaImpl, port: port }, { node: input2LambdaImpl, port: `${port}_new` })
+          if (relevantPortCreated) {
+            createOutputPort(graph, input2LambdaImpl, `${port}_new`, type)
+            createEdge(graph, { node: input2LambdaImpl, port: port }, { node: input2LambdaImpl, port: `${port}_new` })
+          } else {
+            renamePort(graph, input2LambdaImpl, Object.keys(graph.node(input2LambdaImpl).outputPorts)[0], `${port}_new`)
+            input2LambdaRelevantPort = port
+            relevantPortCreated = true
+          }
         }
       })
 
