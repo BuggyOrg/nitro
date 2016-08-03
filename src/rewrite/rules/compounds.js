@@ -61,6 +61,6 @@ export const tailRecursionToLoop = rule(
 )
 
 export const linearRecursionToTailRecursion = rule(
-  match.once(matchLinearRecursiveCompound),
+  matchLinearRecursiveCompound,
   rewriteLinearRecursionToTailRecursion
 )
