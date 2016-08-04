@@ -117,7 +117,28 @@ export const moveMovableFirstNodesOutOfRecursiveCompounds = rule(
         })
       })
 
-      // TODO
+      Object.keys(nodeValue.outputPorts || {}).forEach((port) => {
+        const originalSuccessors = walk.successor(graph, node, port)
+
+        const newPort = createInputPort(graph, n, `${node}_${port}`, nodeValue.outputPorts[port])
+        createEdge(graph, { node, port }, { node: n, port: newPort })
+        originalSuccessors.forEach((successor) => {
+          createEdge(graph, { node: n, port: newPort }, successor)
+        })
+
+        match.recursiveCalls.forEach((c) => {
+          const newPort = createInputPort(graph, c, `${node}_${port}`, nodeValue.outputPorts[port])
+          createEdge(graph, { node: n, port: newPort }, { node: c, port: newPort })
+        })
+
+        walk.predecessor(graph, node, port).forEach((predecessor) => {
+          walk.predecessor(graph, predecessor.node, predecessor.port).forEach((predecessor) => {
+            createEdge(graph, predecessor, { node, port })
+          })
+        })
+      })
+
+      oldEdges.forEach((e) => graph.removeEdge(e))
       graph.setParent(node, graph.parent(n))
     })
   }
