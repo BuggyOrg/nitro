@@ -52,7 +52,7 @@ export function matchLinearRecursiveCompound (graph, n) {
   }
 
   const muxNode =  walk.predecessor(graph, n, Object.keys(compoundNode.outputPorts || {})[0])[0]
-  if (!muxNode) {
+  if (!muxNode || graph.node(muxNode.node).id !== 'logic/mux') {
     return false
   }
 
