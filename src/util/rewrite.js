@@ -321,6 +321,25 @@ export function removeEdge (graph, source, target) {
   })
 }
 
+/**
+ * Removes all edges from and to a specific port of a node.
+ * @param graph the graph
+ * @param node the node
+ * @param port the port
+ */
+export function removeEdges(graph, node, port) {
+  graph.nodeEdges(node).forEach((e) => {
+    const edge = graph.edge(e)
+    if (edge) {
+      if (e.v === node && e.outPort === port) {
+        graph.removeEdge(e)
+      } else if (e.w === node && e.inPort === port) {
+        graph.removeEdge(e)
+      }
+    }
+  })
+}
+
 export function removePort (graph, n, port) {
   const node = graph.node(n)
   graph.nodeEdges(n).forEach((e) => {

@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { getLambdaFunctionType } from '@buggyorg/functional'
 import { rule, match } from '../rewrite'
-import { createEdgeToEachSuccessor, deleteUnusedPredecessors, setNodeAt, setNodeIn, removeEdge, createEdge, createInputPort } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, deleteUnusedPredecessors, setNodeAt, setNodeIn, removeEdge, createEdge, createInputPort, removeEdges, removePort } from '../../util/rewrite'
 import { childrenDeep } from '../../util/graph'
 import * as nodeCreators from '../nodes'
 import createSubgraph from '../../util/subgraphCreator'
@@ -140,6 +140,38 @@ export const moveMovableFirstNodesOutOfRecursiveCompounds = rule(
 
       oldEdges.forEach((e) => graph.removeEdge(e))
       graph.setParent(node, graph.parent(n))
+    })
+  }
+)
+
+export const removeUnusedInputPorts = rule(
+  (graph, n) => {
+    const node = graph.node(n)
+    if (node.recursiveRoot) {
+      const recursiveCalls = childrenDeep(graph, n).filter((c) => graph.node(c).id === node.id)
+      const unusedInputPorts = Object.keys(node.inputPorts || {}).filter((port) => 
+        walk.successor(graph, n, port).every((successor) => graph.node(successor.node).id === node.id && successor.port === port) &&
+        recursiveCalls.every((call) => walk.predecessor(graph, call, port).every((predecessor) => predecessor.node === n && predecessor.port === port))
+      )
+      if (unusedInputPorts.length > 0) {
+        return {
+          node: n,
+          unusedInputPorts,
+          recursiveCalls
+        }
+      }
+    }
+    return false
+  },
+  (graph, n, match) => {
+    match.unusedInputPorts.forEach((port) => {
+      removeEdges(graph, n, port)
+      removePort(graph, n, port)
+
+      match.recursiveCalls.forEach((call) => {
+        removeEdges(graph, call, port)
+        removePort(graph, call, port)
+      })
     })
   }
 )
