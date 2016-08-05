@@ -362,7 +362,7 @@ export function createOutputPort (graph, n, port, type) {
 }
 
 /**
- * Renames a port of a node.
+ * Renames a port of a node. If the port doesn't exist, this is a no-op.
  * @param graph a graphlib graph
  * @param n a node name
  * @param port the old port name
@@ -370,12 +370,15 @@ export function createOutputPort (graph, n, port, type) {
  */
 export function renamePort (graph, n, port, newName) {
   const node = graph.node(n)
-  if (node.inputPorts[port]) {
+
+  if (node.inputPorts && node.inputPorts[port]) {
     node.inputPorts[newName] = node.inputPorts[port]
     delete node.inputPorts[port]
-  } else {
+  } else if (node.outputPorts) {
     node.outputPorts[newName] = node.outputPorts[port]
     delete node.outputPorts[port]
+  } else {
+    return
   }
 
   if (node.settings && node.settings.argumentOrdering) {
