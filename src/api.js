@@ -18,7 +18,7 @@ export function optimize (graph, options = {}) {
   const abstractResult = applyAbstractRules(graph, options.applyAbstractRules || _.values(abstractRewriteRules), options)
   const defaultRules = options.keepDeadCode ? _.omit(rewriteRules, ['replaceConstantMux', 'removeUnusedBranches']) : rewriteRules
   const result = applyRules(abstractResult.graph, options.rules || _.values(defaultRules), options)
-  const cleanupResult = applyRules(result.graph, _.values(cleanupRewriteRules), options)
+  const cleanupResult = applyRules(result.graph, _.values(options.keepDeadCode ? _.omit(cleanupRewriteRules, ['replaceConstantMux', 'removeUnusedBranches']) : cleanupRewriteRules), options)
 
   return {
     graph: cleanupResult.graph,
