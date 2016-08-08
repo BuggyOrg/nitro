@@ -29,7 +29,7 @@ export const replaceConstantCalculations = rule(
 )
 
 export const replaceMultiplicationWithZero = rule(
-  match.byIdAndInputs('math/multiply', [ match.constantNode(0), match.any() ]),
+  match.byIdAndInputs('math/multiply', [ match.constantNode(0), match.any({ requireNode: false }) ]),
   replace.withNode((graph, node, match) => {
     return {
       node: constantNumber(0),
@@ -42,7 +42,7 @@ export const replaceMultiplicationWithZero = rule(
 )
 
 export const replaceAdditionWithZero = rule(
-  match.byIdAndInputs('math/add', [ match.constantNode(0), match.any() ]),
+  match.byIdAndInputs('math/add', [ match.constantNode(0), match.any({ requireNode: false }) ]),
   replace.removeNode((graph, node, match) => [{
     fromPort: match.inputs[1].port,
     toPort: Object.keys(graph.node(node).outputPorts)[0]
@@ -50,7 +50,7 @@ export const replaceAdditionWithZero = rule(
 )
 
 export const replaceSubtractionByZero = rule(
-  match.byIdAndInputs('math/sub', { minuend: match.any(), subtrahend: match.constantNode(0) }),
+  match.byIdAndInputs('math/sub', { minuend: match.any({ requireNode: false }), subtrahend: match.constantNode(0) }),
   replace.removeNode((graph, node, match) => [{
     fromPort: match.inputs[1].port,
     toPort: Object.keys(graph.node(node).outputPorts)[0]
@@ -58,7 +58,7 @@ export const replaceSubtractionByZero = rule(
 )
 
 export const replaceMultiplicationWithOne = rule(
-  match.byIdAndInputs('math/multiply', [ match.constantNode(1), match.any() ]),
+  match.byIdAndInputs('math/multiply', [ match.constantNode(1), match.any({ requireNode: false }) ]),
   replace.removeNode((graph, node, match) => [{
     fromPort: match.inputs[1].port,
     toPort: Object.keys(graph.node(node).outputPorts)[0]
