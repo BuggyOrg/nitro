@@ -1,3 +1,6 @@
+import * as arrayCreators from './array'
+import * as mathCreators from './math'
+
 export function constantBool (value) {
   return {
     id: 'std/const',
@@ -105,6 +108,9 @@ export function partial (parameterIndex = 0) {
   }
 }
 
+/**
+ * @deprecated use array.first() instead
+ */
 export function arrayFirst () {
   return {
     id: 'array/first',
@@ -200,3 +206,6 @@ export function add () {
     }
   }
 }
+
+export const array = arrayCreators
+export const math = mathCreators
