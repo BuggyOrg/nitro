@@ -27,7 +27,7 @@ export function minSearch(graph, { node, port }) {
   const minInput = { node: minImplRecursiveRoot, port: 'min' }
 
   const minImpl = createSubgraph(graph, minImplRecursiveRoot, {
-    node: nodeCreators.mux(),
+    node: nodeCreators.logicMux(),
     predecessors: {
       control: {
         node: nodeCreators.array.empty(),
@@ -59,7 +59,7 @@ export function minSearch(graph, { node, port }) {
             }
           },
           min: {
-            node: nodeCreators.mux(),
+            node: nodeCreators.logicMux(),
             predecessors: {
               control: {
                 node: nodeCreators.math.less(),
@@ -91,12 +91,12 @@ export function minSearch(graph, { node, port }) {
   })
 
   createEdge(graph, { node, port }, listInput)
-  createSubgraph(graph, graph.parent(minImplRecursiveRoot), {
+  createSubgraph(graph, context, {
     node: nodeCreators.array.first(),
     predecessors: {
       array: { node, port }
     },
-    successors: minInput
+    successors: { node: minInput, port: 'min' }
   })
   
   return {

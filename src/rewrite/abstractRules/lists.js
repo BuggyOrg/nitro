@@ -5,6 +5,7 @@ import { rule, match } from '../rewrite'
 import { createEdgeToEachSuccessor, deleteUnusedPredecessors, setNodeAt, setNodeIn, removeEdge, createEdge } from '../../util/rewrite'
 import * as nodeCreators from '../nodes'
 import createSubgraph from '../../util/subgraphCreator'
+import { minSearch } from './minSearch'
 
 export const replaceHeadAfterMap = rule(
   match.byIdAndInputs('array/first', {
@@ -234,5 +235,20 @@ export const concatenateMaps = rule(
       { node: match.inputs.list.inputs.list.node, port: match.inputs.list.inputs.list.inPort },
       { node: node, port: 'list' }
     )
+  }
+)
+
+export const replaceHeadAfterSort = rule(
+  match.byIdAndInputs('array/first', {
+    array: match.byIdAndInputs('sort', {
+      list: match.any({ requireNode: false })
+    })
+  }),
+  (graph, node, match) => {
+    const minSearchImpl = minSearch(graph, match.inputs.array.inputs.list)
+    createEdgeToEachSuccessor(graph, minSearchImpl, match.node)
+
+    deleteUnusedPredecessors(graph, match.node)
+    graph.removeNode(match.node)
   }
 )
