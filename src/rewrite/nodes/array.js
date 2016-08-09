@@ -18,7 +18,7 @@ export function first () {
   }
 }
 
-export function rest() {
+export function rest () {
   return {
     id: 'array/rest',
     version: '0.2.0',
@@ -38,7 +38,7 @@ export function rest() {
   }
 }
 
-export function empty() {
+export function empty () {
   return {
     id: 'array/empty',
     version: '0.2.0',
