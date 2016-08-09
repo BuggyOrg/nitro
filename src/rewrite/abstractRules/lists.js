@@ -245,7 +245,10 @@ export const replaceHeadAfterSort = rule(
     })
   }),
   (graph, node, match) => {
-    const minSearchImpl = minSearch(graph, match.inputs.array.inputs.list)
+    const minSearchImpl = minSearch(graph, {
+      node: match.inputs.array.inputs.list.node,
+      port: match.inputs.array.inputs.list.inPort
+    })
     createEdgeToEachSuccessor(graph, minSearchImpl, match.node)
 
     deleteUnusedPredecessors(graph, match.node)

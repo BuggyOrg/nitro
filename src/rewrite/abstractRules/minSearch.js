@@ -64,7 +64,7 @@ export function minSearch(graph, { node, port }) {
               control: {
                 node: nodeCreators.math.less(),
                 predecessors: {
-                  less: {
+                  isLess: {
                     node: nodeCreators.array.first(),
                     predecessors: {
                       array: listInput
@@ -97,7 +97,7 @@ export function minSearch(graph, { node, port }) {
       array: { node, port }
     },
     successors: {
-      value: { node: minImpl.node, port: 'min' }
+      value: { node: minImplRecursiveRoot, port: 'min' }
     }
   })
 
