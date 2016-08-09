@@ -96,9 +96,11 @@ export function minSearch(graph, { node, port }) {
     predecessors: {
       array: { node, port }
     },
-    successors: { node: minInput, port: 'min' }
+    successors: {
+      value: { node: minImpl.node, port: 'min' }
+    }
   })
-  
+
   return {
     node: minImplRecursiveRoot,
     port: 'minimum'
