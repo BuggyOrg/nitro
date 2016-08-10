@@ -1,11 +1,7 @@
 import { walk } from '@buggyorg/graphtools'
-import { getLambdaFunctionType } from '@buggyorg/functional'
 import _ from 'lodash'
 import { childrenDeep } from '../../../util/graph'
-import { createEdge, createInputPort, createOutputPort, tryGetInputPort, moveNodeInto, unpackCompoundNode,
-         createEdgeToEachSuccessor, createEdgeFromEachPredecessor, deepRemoveNode, renamePort, removeEdge,
-         setNodeAt } from '../../../util/rewrite'
-import { copyNodeInto } from '../../../util/copy'
+import { createEdge, createInputPort, removeEdge, setNodeAt } from '../../../util/rewrite'
 import * as nodeCreator from '../../nodes'
 
 const knownMonoids = [

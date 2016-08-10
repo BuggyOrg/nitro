@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
-import { rule, match, replace } from '../rewrite'
+import { rule, match } from '../rewrite'
 import { copyNode } from '../../util/copy'
 import { createEdgeToEachSuccessor, movePredecessorsInto, deepRemoveNode, createEdge, deleteUnusedPredecessors } from '../../util/rewrite'
 import { realPredecessors } from '../../util/realWalk'

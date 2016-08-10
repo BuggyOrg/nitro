@@ -1,11 +1,8 @@
 import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
-import { getLambdaFunctionType } from '@buggyorg/functional'
-import { rule, match } from '../rewrite'
-import { createEdgeToEachSuccessor, deleteUnusedPredecessors, setNodeAt, setNodeIn, removeEdge, createEdge, createInputPort, removeEdges, removePort } from '../../util/rewrite'
+import { rule } from '../rewrite'
+import { createEdge, createInputPort, removeEdges, removePort } from '../../util/rewrite'
 import { childrenDeep } from '../../util/graph'
-import * as nodeCreators from '../nodes'
-import createSubgraph from '../../util/subgraphCreator'
 
 export const moveIndependentNodesOutOfRecursiveCompounds = rule(
   (graph, n) => {
@@ -61,7 +58,6 @@ export const moveIndependentNodesOutOfRecursiveCompounds = rule(
     })
   }
 )
-
 
 export const moveMovableFirstNodesOutOfRecursiveCompounds = rule(
   (graph, n) => {
