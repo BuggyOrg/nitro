@@ -1,4 +1,4 @@
-export function less() {
+export function less () {
   return {
     id: 'math/less',
     version: '0.2.1',

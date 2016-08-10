@@ -246,7 +246,7 @@ export function createEdgeFromEachPredecessor (graph, source, target) {
  * @param graph graph
  * @param node name of the node to remove
  */
-export function deepRemoveNode (graph, node) {  
+export function deepRemoveNode (graph, node) {
   const nodeValue = graph.node(node)
   const predecessors = _.flattenDeep(Object.keys(nodeValue.inputPorts || {}).map((port) => walk.predecessor(graph, node, port)))
 
@@ -327,7 +327,7 @@ export function removeEdge (graph, source, target) {
  * @param node the node
  * @param port the port
  */
-export function removeEdges(graph, node, port) {
+export function removeEdges (graph, node, port) {
   graph.nodeEdges(node).forEach((e) => {
     const edge = graph.edge(e)
     if (edge) {

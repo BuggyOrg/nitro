@@ -5,7 +5,7 @@ import graphlib from 'graphlib'
 import getStdin from 'get-stdin'
 import fs from 'fs'
 import path from 'path'
-import { rules, optimize as optimizeGraph } from './api'
+import { optimize as optimizeGraph } from './api'
 
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '/../package.json')))['version'])

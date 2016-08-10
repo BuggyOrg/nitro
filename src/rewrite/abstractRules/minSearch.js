@@ -3,7 +3,7 @@ import * as nodeCreators from '../nodes'
 import { createEdge, setNodeAt } from '../../util/rewrite'
 import _ from 'lodash'
 
-export function minSearch(graph, { node, port }) {
+export function minSearch (graph, { node, port }) {
   const context = (graph.node(node).inputPorts || {})[port] ? node : graph.parent(node)
 
   const minImplId = _.uniqueId('minimum')
@@ -26,7 +26,7 @@ export function minSearch(graph, { node, port }) {
   const listInput = { node: minImplRecursiveRoot, port: 'list' }
   const minInput = { node: minImplRecursiveRoot, port: 'min' }
 
-  const minImpl = createSubgraph(graph, minImplRecursiveRoot, {
+  createSubgraph(graph, minImplRecursiveRoot, {
     node: nodeCreators.logicMux(),
     predecessors: {
       control: {

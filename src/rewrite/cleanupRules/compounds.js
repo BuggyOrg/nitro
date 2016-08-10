@@ -149,7 +149,7 @@ export const removeUnusedInputPorts = rule(
     const node = graph.node(n)
     if (node.recursiveRoot) {
       const recursiveCalls = childrenDeep(graph, n).filter((c) => graph.node(c).id === node.id)
-      const unusedInputPorts = Object.keys(node.inputPorts || {}).filter((port) => 
+      const unusedInputPorts = Object.keys(node.inputPorts || {}).filter((port) =>
         walk.successor(graph, n, port).every((successor) => graph.node(successor.node).id === node.id && successor.port === port) &&
         recursiveCalls.every((call) => walk.predecessor(graph, call, port).every((predecessor) => predecessor.node === n && predecessor.port === port))
       )

@@ -61,7 +61,7 @@ export function matchLinearRecursiveCompound (graph, n) {
     return false
   }
 
-  const muxNode =  walk.predecessor(graph, n, Object.keys(compoundNode.outputPorts || {})[0])[0]
+  const muxNode = walk.predecessor(graph, n, Object.keys(compoundNode.outputPorts || {})[0])[0]
   if (!muxNode || graph.node(muxNode.node).id !== 'logic/mux') {
     return false
   }
@@ -120,7 +120,7 @@ export function rewriteLinearRecursionToTailRecursion (graph, node, match) {
   // non-recursive input port: multiply with acc
   const nonRecursiveInput = match.recursivePort === 'input1' ? 'input2' : 'input1'
   removeEdge(graph,
-    match.muxNode[nonRecursiveInput], 
+    match.muxNode[nonRecursiveInput],
     { node: match.muxNode.node.node, port: nonRecursiveInput })
   const newNonRecursiveInput = match.operation.createOperation(graph,
     match.muxNode[nonRecursiveInput],

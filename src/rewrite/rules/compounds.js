@@ -23,7 +23,7 @@ export const moveInputsIntoRecursiveCompounds = rule(
       }
       const constantInputPort = Object.keys(node.inputPorts).find((port) => {
         const predecessor = realPredecessors(graph, n, port)
-        
+
         // the branch is movable if the only successor is this compound node and if the predecessor in the branch are also movable
         return predecessor.length === 1 && Object.keys(graph.node(predecessor[0].node).inputPorts || {})
                 .every((port) => walk.predecessor(graph, predecessor[0].node, port).every((p) => match.movable()(graph, p.node))) &&
