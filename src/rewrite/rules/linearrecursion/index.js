@@ -28,6 +28,16 @@ const knownMonoids = [
       return node
     },
     neutralElement: () => nodeCreator.constantNumber(0)
+  },
+  {
+    operation: 'array/concat',
+    createOperation: (graph, a, b, context) => {
+      const node = setNodeAt(graph, _.uniqueId('associative_operation'), context, nodeCreator.array.concat())
+      createEdge(graph, a, { node, port: 'array1' })
+      createEdge(graph, b, { node, port: 'array2' })
+      return node
+    },
+    neutralElement: () => nodeCreator.array.empty()
   }
 ]
 

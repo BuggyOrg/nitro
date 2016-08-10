@@ -57,3 +57,25 @@ export function empty () {
     }
   }
 }
+
+export function concat () {
+  return {
+    id: 'array/concat',
+    version: '0.2.0',
+    inputPorts: {
+      array1: 'generic',
+      array2: 'generic'
+    },
+    outputPorts: {
+      result: 'generic'
+    },
+    atomic: true,
+    settings: {
+      argumentOrdering: [
+        'array1',
+        'array2',
+        'result'
+      ]
+    }
+  }
+}
