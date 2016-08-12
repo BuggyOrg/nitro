@@ -2,7 +2,8 @@ import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { getLambdaFunctionType } from '@buggyorg/functional'
 import { rule, match } from '../rewrite'
-import { createEdgeToEachSuccessor, deleteUnusedPredecessors, setNodeAt, setNodeIn, removeEdge, createEdge } from '../../util/rewrite'
+import { createEdgeToEachSuccessor, deleteUnusedPredecessors, setNodeAt, setNodeIn, removeEdge, createEdge, deepRemoveNode } from '../../util/rewrite'
+import { copyNode } from '../../util/copy'
 import * as nodeCreators from '../nodes'
 import createSubgraph from '../../util/subgraphCreator'
 import { minSearch, maxSearch } from './minSearch'
@@ -271,5 +272,28 @@ export const replaceHeadAfterSortDesc = rule(
 
     deleteUnusedPredecessors(graph, match.node)
     graph.removeNode(match.node)
+  }
+)
+
+export const swapSortAndFilter = rule(
+  match.byIdAndInputs('filter', {
+    list: match.oneOf(
+      match.byIdAndInputs('sort', { list: match.any() }),
+      match.byIdAndInputs('sortDesc', { list: match.any() })
+    ),
+    fn: match.any()
+  }),
+  (graph, node, match) => {
+    const filterCopy = copyNode(graph, match.node)
+    const sortCopy = copyNode(graph, match.inputs.list.node)
+
+    createEdge(graph, filterCopy, { node: sortCopy, port: 'list' })
+    createEdge(graph, { node: match.inputs.list.inputs.list.node, port: match.inputs.list.inputs.list.inPort },
+                      { node: filterCopy, port: 'list' })
+    createEdge(graph, match.inputs.fn.node, { node: filterCopy, port: 'fn' })
+
+    createEdgeToEachSuccessor(graph, sortCopy, match.node)
+
+    deepRemoveNode(graph, match.node)
   }
 )
