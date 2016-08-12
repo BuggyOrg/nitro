@@ -106,3 +106,108 @@ export function minSearch (graph, { node, port }) {
     port: 'minimum'
   }
 }
+
+
+export function maxSearch (graph, { node, port }) {
+  const context = (graph.node(node).inputPorts || {})[port] ? node : graph.parent(node)
+
+  const maxImplId = _.uniqueId('maximum')
+  const maxImplRecursiveRoot = setNodeAt(graph, _.uniqueId('maximum'), context, {
+    id: maxImplId,
+    recursiveRoot: true,
+    recursive: true,
+    inputPorts: {
+      list: 'generic',
+      max: 'number'
+    },
+    outputPorts: {
+      maximum: 'number'
+    },
+    settings: {
+      argumentOrdering: ['list', 'max', 'maximum']
+    }
+  })
+
+  const listInput = { node: maxImplRecursiveRoot, port: 'list' }
+  const maxInput = { node: maxImplRecursiveRoot, port: 'max' }
+
+  createSubgraph(graph, maxImplRecursiveRoot, {
+    node: nodeCreators.logicMux(),
+    predecessors: {
+      control: {
+        node: nodeCreators.array.empty(),
+        predecessors: {
+          array: listInput
+        }
+      },
+      input1: maxInput,
+      input2: {
+        node: {
+          id: maxImplId,
+          recursive: true,
+          inputPorts: {
+            list: 'generic',
+            max: 'number'
+          },
+          outputPorts: {
+            maximum: 'number'
+          },
+          settings: {
+            argumentOrdering: ['list', 'max', 'maximum']
+          }
+        },
+        predecessors: {
+          list: {
+            node: nodeCreators.array.rest(),
+            predecessors: {
+              array: listInput
+            }
+          },
+          max: {
+            node: nodeCreators.logicMux(),
+            predecessors: {
+              control: {
+                node: nodeCreators.math.less(),
+                predecessors: {
+                  isLess: maxInput,
+                  than: {
+                    node: nodeCreators.array.first(),
+                    predecessors: {
+                      array: listInput
+                    }
+                  }
+                }
+              },
+              input1: {
+                node: nodeCreators.array.first(),
+                predecessors: {
+                  array: listInput
+                }
+              },
+              input2: maxInput
+            }
+          }
+        }
+      }
+    },
+    successors: {
+      output: { node: maxImplRecursiveRoot, port: 'maximum' }
+    }
+  })
+
+  createEdge(graph, { node, port }, listInput)
+  createSubgraph(graph, context, {
+    node: nodeCreators.array.first(),
+    predecessors: {
+      array: { node, port }
+    },
+    successors: {
+      value: { node: maxImplRecursiveRoot, port: 'max' }
+    }
+  })
+
+  return {
+    node: maxImplRecursiveRoot,
+    port: 'maximum'
+  }
+}
