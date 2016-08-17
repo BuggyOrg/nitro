@@ -1,5 +1,12 @@
 import _ from 'lodash'
 
+/**
+ * Copy the given node into the given target node.
+ * @param graph graphlib graph
+ * @param node node to copy
+ * @param target target node
+ * @returns name of the copy
+ */
 export function copyNodeInto (graph, node, target) {
   const nodeCopy = `${node}_${_.uniqueId('copy_')}`
   const newNodeValue = _.cloneDeep(graph.node(node))
@@ -27,6 +34,12 @@ export function copyNodeInto (graph, node, target) {
   return nodeCopy
 }
 
+/**
+ * Copy the given node. The copy will have the same parent as the original node.
+ * @param graph graphlib graph
+ * @param node node to copy
+ * @returns name of the copy
+ */
 export function copyNode (graph, node) {
   return copyNodeInto(graph, node, graph.parent(node))
 }

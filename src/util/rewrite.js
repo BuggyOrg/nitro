@@ -2,6 +2,12 @@ import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { atomicSuccessorsInPort } from './atomicWalk'
 
+/**
+ * Get the type input port of the given node.
+ * @param graph graphlib graph
+ * @param input node name
+ * @returns object with node name and port
+ */
 function getInputPort (graph, input) {
   if (_.isString(input)) {
     const node = graph.node(input)
@@ -19,6 +25,12 @@ function getInputPort (graph, input) {
   }
 }
 
+/**
+ * Get the output port of the given node.
+ * @param graph graphlib graph
+ * @param output node name
+ * @returns object with node name and port
+ */
 function getOutputPort (graph, output) {
   if (_.isString(output)) {
     const node = graph.node(output)
@@ -212,6 +224,12 @@ export function unpackCompoundNode (graph, node) {
   graph.removeNode(node)
 }
 
+/**
+ * Create an edge between two nodes.
+ * @param graph graphlib graph
+ * @param source source node name or node-port object
+ * @param target target node name or node-port object
+ */
 export function createEdge (graph, source, target) {
   source = getOutputPort(graph, source)
   target = getInputPort(graph, target)
@@ -223,6 +241,12 @@ export function createEdge (graph, source, target) {
   }, edgeName)
 }
 
+/**
+ * Create edges from the given source to every successor of the given target.
+ * @param graph graphlib graph
+ * @param source source node name or node-port object
+ * @param target target node name or node-port object
+ */
 export function createEdgeToEachSuccessor (graph, source, target) {
   source = getOutputPort(graph, source)
   target = getOutputPort(graph, target)
@@ -232,6 +256,12 @@ export function createEdgeToEachSuccessor (graph, source, target) {
   })
 }
 
+/**
+ * Create edges from each predecessor of the given source to the given target.
+ * @param graph graphlib graph
+ * @param source source node name or node-port object
+ * @param target target node name or node-port object
+ */
 export function createEdgeFromEachPredecessor (graph, source, target) {
   source = getInputPort(graph, source)
   target = getInputPort(graph, target)
@@ -274,6 +304,13 @@ export function deepRemoveNode (graph, node) {
   })
 }
 
+/**
+ * Move all predecessor of the given node and port into the given target node.
+ * @param graph graphlib graph
+ * @param node node name
+ * @param port input port name
+ * @param target target node name
+ */
 export function movePredecessorsInto (graph, { node, port }, target) {
   walk.predecessor(graph, node, port).forEach((predecessor) => {
     if (graph.parent(node) === predecessor.node) { // this is an input port of a parent node
@@ -303,6 +340,12 @@ export function movePredecessorsInto (graph, { node, port }, target) {
   })
 }
 
+/**
+ * Move the given node and all predecessors into the given target node.
+ * @param graph graphlib graph
+ * @param node node name
+ * @param target target node name
+ */
 export function moveNodeInto (graph, node, target) {
   graph.setParent(node, target)
   Object.keys(graph.node(node).inputPorts || {}).forEach((port) => {
@@ -310,6 +353,12 @@ export function moveNodeInto (graph, node, target) {
   })
 }
 
+/**
+ * Remove all edges between from given source to the given target.
+ * @param graph graphlib graph
+ * @param source source node name or node-port object
+ * @param target target node name or node-port object
+ */
 export function removeEdge (graph, source, target) {
   source = getOutputPort(graph, source)
   target = getInputPort(graph, target)
@@ -322,10 +371,10 @@ export function removeEdge (graph, source, target) {
 }
 
 /**
- * Removes all edges from and to a specific port of a node.
- * @param graph the graph
- * @param node the node
- * @param port the port
+ * Remove all edges from and to a specific port of a node.
+ * @param graph graphlib graph
+ * @param node node name
+ * @param port port name
  */
 export function removeEdges (graph, node, port) {
   graph.nodeEdges(node).forEach((e) => {
@@ -340,6 +389,12 @@ export function removeEdges (graph, node, port) {
   })
 }
 
+/**
+ * Remove a port and all edges from or to that port from a node.
+ * @param graph graphlib graph
+ * @param n node name
+ * @param port port name
+ */
 export function removePort (graph, n, port) {
   const node = graph.node(n)
   graph.nodeEdges(n).forEach((e) => {
@@ -352,6 +407,13 @@ export function removePort (graph, n, port) {
   delete node.inputPorts[port]
 }
 
+/**
+ * Create an input port with the given name and type on a node.
+ * @param graph graphlib graph
+ * @param n node name
+ * @param port name of the port to create
+ * @param type type of the port to create
+ */
 export function createInputPort (graph, n, port, type) {
   const node = graph.node(n)
   if (!node.inputPorts) {
@@ -366,6 +428,13 @@ export function createInputPort (graph, n, port, type) {
   return port
 }
 
+/**
+ * Create an output port with the given name and type on a node.
+ * @param graph graphlib graph
+ * @param n node name
+ * @param port name of the port to create
+ * @param type type of the port to create
+ */
 export function createOutputPort (graph, n, port, type) {
   const node = graph.node(n)
   if (!node.outputPorts) {
@@ -381,7 +450,7 @@ export function createOutputPort (graph, n, port, type) {
 }
 
 /**
- * Renames a port of a node. If the port doesn't exist, this is a no-op.
+ * Rename a port of a node. If the port doesn't exist, this is a no-op.
  * @param graph a graphlib graph
  * @param n a node name
  * @param port the old port name
@@ -414,6 +483,13 @@ export function renamePort (graph, n, port, newName) {
   })
 }
 
+/**
+ * Try to get an input port of a node.
+ * @param graph graphlib graph
+ * @param n node name
+ * @param port port name
+ * @returns the type of the input port or undefined if the input port doesn't exist
+ */
 export function tryGetInputPort (graph, n, port) {
   return (graph.node(n).inputPorts || {})[port]
 }

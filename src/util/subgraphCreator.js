@@ -1,7 +1,15 @@
 import _ from 'lodash'
 import { createEdge, setNodeIn } from './rewrite'
 
-export function createSubgraph (graph, context, subgraph, type = 'predecessor') {
+/**
+ * Create a subgraph inside the given context node.
+ * @param graph graphlib graph
+ * @param context parent node to insert the subgraph into
+ * @param subgraph subgraph specification
+ * @param type whether to create the new nodes as predecessors or successors
+ * @returns object with the node, port, predecessors and successors of the created subgraph
+ */
+function createSubgraph (graph, context, subgraph, type = 'predecessor') {
   let node, port
   if (_.isObject(subgraph.node)) {
     node = `subgraph_node_${_.uniqueId()}`
@@ -58,4 +66,14 @@ export function createSubgraph (graph, context, subgraph, type = 'predecessor') 
   return { node, port, predecessors, successors }
 }
 
-export default createSubgraph
+/**
+ * Create a subgraph inside the given context node.
+ * @param graph graphlib graph
+ * @param context parent node to insert the subgraph into
+ * @param subgraph subgraph specification
+ * @returns object with the node and port of the created subgraph
+ */
+export default function (graph, context, subgraph) {
+  const { node, port } = createSubgraph(graph, context, subgraph, 'predecessor')
+  return { node, port }
+}

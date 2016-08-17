@@ -1,5 +1,11 @@
 import _ from 'lodash'
 
+/**
+ * Get all nested children of a node.
+ * @param graph graphlib graph
+ * @param node node name
+ * @returns all nested children of the node
+ */
 export function childrenDeep (graph, node) {
   const children = graph.children(node)
   return _.flattenDeep([
@@ -8,6 +14,12 @@ export function childrenDeep (graph, node) {
   ])
 }
 
+/**
+ * Check if two values have the same node and port attribute.
+ * @param a node
+ * @param b another node
+ * @returns true if both arguments have the same node and port attributes
+ */
 export function isSamePort (a, b) {
   return a.node === b.node && a.port === b.port
 }
