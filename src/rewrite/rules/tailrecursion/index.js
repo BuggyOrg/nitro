@@ -189,6 +189,9 @@ function mergeLambdas (graph, lambdaFunctions) {
   return firstLambda
 }
 
+/**
+ * Propagates the type of the given port to all of its successor ports.
+ */
 function propagatePortType (graph, { node, port }) {
   const type = graph.node(node).outputPorts[port]
   if (type) {
@@ -209,6 +212,10 @@ function fixNewOutputPortsOrdering (graph, n) {
   node.settings.argumentOrdering = _.concat(inputPorts, expectedOutputPorts)
 }
 
+/**
+ * Replace the tail-recursive function at the given node (and match) with a
+ * tailrec node that is compiled to a loop.
+ */
 export function rewriteTailRecursionToLoop (graph, node, match) {
   const predicateLambdas = match.predicates.map((predicate) => {
     const controlLambda = extractIntoLambda(graph, node, predicate.control)

@@ -110,6 +110,9 @@ export function matchLinearRecursiveCompound (graph, n) {
   }
 }
 
+/**
+ * Replace some linear-recursive functions with tail-recursive functions.
+ */
 export function rewriteLinearRecursionToTailRecursion (graph, node, match) {
   const accPort = _.uniqueId('acc')
 

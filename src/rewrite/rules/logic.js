@@ -4,6 +4,9 @@ import { matchInvertableNode, invertNode } from './invertable'
 import { constantBool, logicNot } from '../nodes'
 import createSubgraph from '../../util/subgraphCreator'
 
+/**
+ * Replace a logic/and node with constant inputs with a constant.
+ */
 export const replaceConstantAnd = rule(
   match.byIdAndInputs('logic/and', { i1: match.constantNode(), i2: match.constantNode() }),
   replace.withNode((graph, node, match) => {
@@ -17,6 +20,9 @@ export const replaceConstantAnd = rule(
   })
 )
 
+/**
+ * Replace a logic/and node where one input is false with false.
+ */
 export const replaceFalseAnd = rule(
   match.oneOf(
     match.byIdAndInputs('logic/and', { i1: match.constantNode(false), i2: match.any() }),
@@ -33,6 +39,9 @@ export const replaceFalseAnd = rule(
   })
 )
 
+/**
+ * Remove logic/and if one input is true.
+ */
 export const replaceAndWithTrue = rule(
   match.byIdAndInputs('logic/and', [ match.constantNode(true), match.any() ]),
   replace.removeNode((graph, node, match) => [{
@@ -41,6 +50,9 @@ export const replaceAndWithTrue = rule(
   }])
 )
 
+/**
+ * Replace logic/or with constant inputs with a constant.
+ */
 export const replaceConstantOr = rule(
   match.byIdAndInputs('logic/or', { i1: match.constantNode(), i2: match.constantNode() }),
   replace.withNode((graph, node, match) => {
@@ -54,6 +66,9 @@ export const replaceConstantOr = rule(
   })
 )
 
+/**
+ * Replace a logic/or if one of the inputs is true with true.
+ */
 export const replaceTrueOr = rule(
   match.oneOf(
     match.byIdAndInputs('logic/or', { i1: match.constantNode(true), i2: match.any() }),
@@ -70,6 +85,9 @@ export const replaceTrueOr = rule(
   })
 )
 
+/**
+ * Remove a logic/or node if one of the inputs is false.
+ */
 export const replaceOrWithFalse = rule(
   match.byIdAndInputs('logic/or', [ match.constantNode(false), match.any() ]),
   replace.removeNode((graph, node, match) => [{
@@ -78,6 +96,9 @@ export const replaceOrWithFalse = rule(
   }])
 )
 
+/**
+ * Invert constants followed by logic/not.
+ */
 export const replaceConstantNot = rule(
   match.byIdAndInputs('logic/not', { input: match.constantNode() }),
   replace.withNode((graph, node, match) => {
@@ -92,6 +113,9 @@ export const replaceConstantNot = rule(
   })
 )
 
+/**
+ * Replace ((not a) and (not b)) with (not (a or b)).
+ */
 export const replaceDeMorganAnd = rule(
   match.byIdAndInputs('logic/and', {
     i1: match.byIdAndInputs('logic/not', { input: match.any() }),
@@ -142,6 +166,9 @@ export const replaceDeMorganAnd = rule(
   }
 )
 
+/**
+ * Replace ((not a) or (not b)) with (not (a and b)).
+ */
 export const replaceDeMorganOr = rule(
   match.byIdAndInputs('logic/or', {
     i1: match.byIdAndInputs('logic/not', { input: match.any() }),
@@ -192,6 +219,9 @@ export const replaceDeMorganOr = rule(
   }
 )
 
+/**
+ * Remove logic/not after invertable nodes and invert the node instead.
+ */
 export const replaceInvertedInvertable = rule(
   match.byIdAndInputs('logic/not', [
     matchInvertableNode()
@@ -204,6 +234,9 @@ export const replaceInvertedInvertable = rule(
   }
 )
 
+/**
+ * Replace (not (a and b)) with ((not a) or (not b)) if a and b are invertable.
+ */
 export const replaceNegatedAndWithInvertableInputs = rule(
   match.byIdAndInputs('logic/not', [
     match.byIdAndInputs('logic/and', [
@@ -242,6 +275,9 @@ export const replaceNegatedAndWithInvertableInputs = rule(
   }
 )
 
+/**
+ * Replace (not (a or b)) with ((not a) and (not b)) if a and b are invertable.
+ */
 export const replaceNegatedOrWithInvertableInputs = rule(
   match.byIdAndInputs('logic/not', [
     match.byIdAndInputs('logic/or', [
@@ -280,11 +316,17 @@ export const replaceNegatedOrWithInvertableInputs = rule(
   }
 )
 
+/**
+ * Remove std/id (identity function).
+ */
 export const removeId = rule(
   match.byIdAndInputs('std/id'),
   replace.removeNode([{ fromPort: 'input', toPort: 'output' }])
 )
 
+/**
+ * Remove logic/mux if input1 is true and input2 is false.
+ */
 export const replaceRedundantMux = rule(
   match.byIdAndInputs('logic/mux', {
     control: match.type('bool'),
@@ -301,6 +343,9 @@ export const replaceRedundantMux = rule(
   }
 )
 
+/**
+ * Replace logic/mux if input1 is false and input2 is true.
+ */
 export const replaceRedundantInverseMux = rule(
   match.byIdAndInputs('logic/mux', {
     control: match.type('bool'),

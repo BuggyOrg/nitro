@@ -2,6 +2,12 @@ import _ from 'lodash'
 import rewriteRules from './rules/index'
 import { isUnnecessaryCompound, unpackCompoundNode } from '../util/rewrite'
 
+/**
+ * Apply a rule once.
+ * @param graph graphlib graph
+ * @param rule a rule
+ * @returns true if the rule was applied, false if not
+ */
 function applyRuleOnce (graph, rule) {
   if (_.isFunction(rule)) {
     return rule(graph)
@@ -12,6 +18,12 @@ function applyRuleOnce (graph, rule) {
   }
 }
 
+/**
+ * Apply a rule as often as possible.
+ * @param graph graphlib graph
+ * @param rule a rule
+ * @returns true if the rule was applied at least once, false if not
+ */
 export function applyRule (graph, rule) {
   let anyRuleApplied = false
   let ruleApplied
@@ -24,10 +36,21 @@ export function applyRule (graph, rule) {
   return anyRuleApplied
 }
 
+/**
+ * Remove all non-recursive compound nodes.
+ * @param graph graphlib graph
+ * @returns true if some nodes were replaced, false if not
+ */
 function decompoundify (graph) {
   return applyRule(graph, rewriteRules.removeUnnecessaryCompoundNodes)
 }
 
+/**
+ * Remove all non-recursive compound nodes that have no parent or that have a lambda function as
+ * parent.
+ * @param graph graphlib graph
+ * @returns number of the removed compound nodes
+ */
 function removeRootCompounds (graph) {
   const rootCompounds = graph.nodes()
     .filter((n) => {
@@ -54,6 +77,13 @@ function removeRootCompounds (graph) {
   return rootCompounds.length
 }
 
+/**
+ * Apply the given rewrite rules, in-place.
+ * @param graph graphlib graph
+ * @param rules an array or object map of rules to apply
+ * @param options options
+ * @returns an object with the graph and statistics
+ */
 export function applyRules (graph, rules, options = {}) {
   if (!_.isArray(rules) && _.isObject(rules)) {
     rules = _.values(rules)
@@ -101,6 +131,13 @@ export function applyRules (graph, rules, options = {}) {
   return { graph, stats }
 }
 
+/**
+ * Apply the given abstract rewrite rules, in-place.
+ * @param graph graphlib graph
+ * @param rules an array or object map of rules to apply
+ * @param options options
+ * @returns an object with the graph and statistics
+ */
 export function applyAbstractRules (graph, rules, options = {}) {
   if (!_.isArray(rules) && _.isObject(rules)) {
     rules = _.values(rules)

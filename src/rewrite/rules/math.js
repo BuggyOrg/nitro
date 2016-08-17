@@ -4,6 +4,9 @@ import { allEqual } from '../../util/check'
 import { copyNode } from '../../util/copy'
 import { constantBool, constantNumber, constantString, multiply } from '../nodes'
 
+/**
+ * Replace calculations with constant inputs with constants.
+ */
 export const replaceConstantCalculations = rule(
   match.oneOf(
     match.byIdAndInputs('math/add', { s1: { match: match.constantNode(), alias: 'a' }, s2: { match: match.constantNode(), alias: 'b' } }),
@@ -28,6 +31,9 @@ export const replaceConstantCalculations = rule(
   { name: 'replace constant calculation' }
 )
 
+/**
+ * Replace multiplication with zero with a constant zero.
+ */
 export const replaceMultiplicationWithZero = rule(
   match.byIdAndInputs('math/multiply', [ match.constantNode(0), match.any({ requireNode: false }) ]),
   replace.withNode((graph, node, match) => {
@@ -41,6 +47,9 @@ export const replaceMultiplicationWithZero = rule(
   })
 )
 
+/**
+ * Remove addition with zero.
+ */
 export const replaceAdditionWithZero = rule(
   match.byIdAndInputs('math/add', [ match.constantNode(0), match.any({ requireNode: false }) ]),
   replace.removeNode((graph, node, match) => [{
@@ -49,6 +58,9 @@ export const replaceAdditionWithZero = rule(
   }])
 )
 
+/**
+ * Remove subtraction with zero.
+ */
 export const replaceSubtractionByZero = rule(
   match.byIdAndInputs('math/sub', { minuend: match.any({ requireNode: false }), subtrahend: match.constantNode(0) }),
   replace.removeNode((graph, node, match) => [{
@@ -57,6 +69,9 @@ export const replaceSubtractionByZero = rule(
   }])
 )
 
+/**
+ * Remove multiplication with one.
+ */
 export const replaceMultiplicationWithOne = rule(
   match.byIdAndInputs('math/multiply', [ match.constantNode(1), match.any({ requireNode: false }) ]),
   replace.removeNode((graph, node, match) => [{
@@ -65,6 +80,9 @@ export const replaceMultiplicationWithOne = rule(
   }])
 )
 
+/**
+ * Replace number to string conversion if the input is constant.
+ */
 export const replaceConstantNumberToString = rule(
   match.byIdAndInputs('translator/number_to_string', { input: match.byIdAndInputs('math/const') }),
   replace.withNode((graph, node, match) => {
@@ -78,6 +96,9 @@ export const replaceConstantNumberToString = rule(
   })
 )
 
+/**
+ * Rewrite x * x * x * x with (x * x)^2.
+ */
 export const rewriteMultipleMultiplication = rule(
   (graph, node) => {
     const matcher = match.byIdAndInputs('math/multiply', [
@@ -129,6 +150,9 @@ export const rewriteMultipleMultiplication = rule(
   }
 )
 
+/**
+ * Replace comparison of two constant values.
+ */
 export const replaceConstantComparison = rule(
   match.oneOf(
     match.byIdAndInputs('math/less', { isLess: match.alias('a', match.constantNode()), than: match.alias('b', match.constantNode()) }),
@@ -158,6 +182,9 @@ export const replaceConstantComparison = rule(
   })
 )
 
+/**
+ * Move constants upwards in the tree if that allows more calculations to be replaced.
+ */
 export const bubbleUpConstant = ['math/add', 'math/multiply', 'logic/and', 'logic/or'].map((operation) => rule(
   match.byIdAndInputs(operation, [
     match.alias('operation', match.movable(match.byIdAndInputs(operation, [ match.alias('constant', match.constantNode()), match.alias('x', match.movable()) ]))),
@@ -192,6 +219,9 @@ export const bubbleUpConstant = ['math/add', 'math/multiply', 'logic/and', 'logi
   }
 ))
 
+/**
+ * Replace logic/equal node with constant inputs.
+ */
 export const replaceConstantEqual = rule(
   match.byIdAndInputs('logic/equal', { i1: match.constantNode(), i2: match.constantNode() }),
   replace.withNode((graph, node, match) => {
@@ -207,6 +237,9 @@ export const replaceConstantEqual = rule(
   })
 )
 
+/**
+ * Replace some comparisons that are always true with true.
+ */
 export const replaceAlwaysTrueComparison = rule(
   match.once(match.oneOf(
     match.byIdAndSameInputs('logic/equal', ['i1', 'i2'], match.any({ requireNode: false })),
@@ -224,6 +257,9 @@ export const replaceAlwaysTrueComparison = rule(
   })
 )
 
+/**
+ * Replace some comparisons that are always false with false.
+ */
 export const replaceAlwaysFalseComparison = rule(
   match.once(match.oneOf(
     match.byIdAndSameInputs('math/less', ['isLess', 'than'], match.any({ requireNode: false })),

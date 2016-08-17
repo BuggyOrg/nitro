@@ -8,6 +8,9 @@ import * as nodeCreators from '../nodes'
 import createSubgraph from '../../util/subgraphCreator'
 import { minSearch, maxSearch } from './minSearch'
 
+/**
+ * Replace map followed by array/first with array/first followed by functional/apply on that element.
+ */
 export const replaceHeadAfterMap = rule(
   match.byIdAndInputs('array/first', {
     array: match.byIdAndInputs('map', {
@@ -41,6 +44,10 @@ export const replaceHeadAfterMap = rule(
   }
 )
 
+/**
+ * Replace two successive filter nodes by one filter node that uses a filter function that combines the
+ * original filter functions.
+ */
 export const concatenateFilters = rule(
   match.once(match.byIdAndInputs('filter', {
     list: match.byIdAndInputs('filter', {
@@ -145,6 +152,10 @@ export const concatenateFilters = rule(
   }
 )
 
+/**
+ * Replaces to successive map nodes by one map node with a mapping functions that combines the two
+ * original mapping functions.
+ */
 export const concatenateMaps = rule(
   match.once(match.byIdAndInputs('map', {
     list: match.byIdAndInputs('map', {
@@ -239,6 +250,9 @@ export const concatenateMaps = rule(
   }
 )
 
+/**
+ * Replace a sort node followed by an array/first node with a minimum search.
+ */
 export const replaceHeadAfterSort = rule(
   match.byIdAndInputs('array/first', {
     array: match.byIdAndInputs('sort', {
@@ -257,6 +271,9 @@ export const replaceHeadAfterSort = rule(
   }
 )
 
+/**
+ * Replace a sortDesc node followed by an array/first node with a maximum search.
+ */
 export const replaceHeadAfterSortDesc = rule(
   match.byIdAndInputs('array/first', {
     array: match.byIdAndInputs('sortDesc', {
@@ -275,6 +292,9 @@ export const replaceHeadAfterSortDesc = rule(
   }
 )
 
+/**
+ * Move filter nodes in front of preceding sort nodes.
+ */
 export const swapSortAndFilter = rule(
   match.byIdAndInputs('filter', {
     list: match.oneOf(

@@ -2,6 +2,9 @@ import _ from 'lodash'
 import { walk } from '@buggyorg/graphtools'
 import { rule, match, replace } from '../rewrite'
 
+/**
+ * Remove logic/mux nodes with constant condition.
+ */
 export const replaceConstantMux = rule(
   match.byIdAndInputs('logic/mux', {
     control: match.constantNode(),
@@ -23,6 +26,9 @@ export const replaceConstantMux = rule(
   })
 )
 
+/**
+ * Remove program unused subgraphs.
+ */
 export const removeUnusedBranches = (graph) => {
   const requiredNodes = {}
   const markPredecessorsAndChildren = (n) => {

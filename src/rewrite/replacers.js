@@ -2,6 +2,11 @@ import { replaceNode, deleteUnusedPredecessors, createEdgeToEachSuccessor, deepR
 import { walk } from '@buggyorg/graphtools'
 import _ from 'lodash'
 
+/**
+ * Create a replacer that replaces a match with a node.
+ * @param nodeCreator function that creates a node
+ * @returns replacer function
+ */
 export function withNode (nodeCreator) {
   return (graph, node, match) => {
     const newNode = nodeCreator(graph, node, match)
@@ -13,6 +18,11 @@ export function withNode (nodeCreator) {
   }
 }
 
+/**
+ * Create a replacer that removes a matched node.
+ * @param portRewriter an object that contains the port rewrite rules or a function that creates such an object
+ * @returns replacer function
+ */
 export function removeNode (portRewriter) {
   return (graph, node, match) => {
     if (portRewriter) {
@@ -44,6 +54,8 @@ export function removeNode (portRewriter) {
  * `[{ source: { node: 'nodeName', port: 'port' }, target: { node: 'node', port: 'port' } }]`
  * where each bridge will create edges from the source to any direct successor of the target (and
  * not to the target itself).
+ * @param bridgeCreator bridge creator as described above
+ * @returns replacer function
  */
 export function bridgeOver (bridgeCreator) {
   return (graph, node, match) => {

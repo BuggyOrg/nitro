@@ -4,6 +4,10 @@ import { rule } from '../rewrite'
 import { createEdge, createInputPort, removeEdges, removePort } from '../../util/rewrite'
 import { childrenDeep } from '../../util/graph'
 
+/**
+ * Move nodes out of recursive compound nodes that don't depend on the input
+ * ports of the recursive compound.
+ */
 export const moveIndependentNodesOutOfRecursiveCompounds = rule(
   (graph, n) => {
     // match recursive compound nodes that have child nodes that are independent of the compound's input ports
@@ -59,6 +63,10 @@ export const moveIndependentNodesOutOfRecursiveCompounds = rule(
   }
 )
 
+/**
+ * Move nodes out of recursive compound nodes that only depend on the compound's
+ * input ports, even in recursive calls.
+ */
 export const moveMovableFirstNodesOutOfRecursiveCompounds = rule(
   (graph, n) => {
     // match recursive compound nodes that have child nodes that only depend on the compound's input ports
@@ -140,6 +148,9 @@ export const moveMovableFirstNodesOutOfRecursiveCompounds = rule(
   }
 )
 
+/**
+ * Remove input ports of recursive compound nodes that have no successors.
+ */
 export const removeUnusedInputPorts = rule(
   (graph, n) => {
     const node = graph.node(n)

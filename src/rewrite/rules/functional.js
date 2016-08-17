@@ -7,6 +7,9 @@ import { realPredecessors } from '../../util/realWalk'
 import { findDeep } from '../../util/object'
 import { getInputPorts } from '../../util/graph'
 
+/**
+ * Replace calls of known lambda functions with the implementation.
+ */
 export const replaceNonRecursiveCall = rule(
   match.byIdAndInputs('functional/call', {
     fn: match.lambda({ recursive: false, sideeffects: false })
@@ -19,6 +22,10 @@ export const replaceNonRecursiveCall = rule(
   }
 )
 
+/**
+ * Replace lambda functions followed by functional/partial with a new lambda
+ * function that has the bound value inlined.
+ */
 export const replaceNonRecursivePartial = rule(
   match.byIdAndInputs('functional/partial', {
     fn: match.lambda({ recursive: false, sideeffects: false }),
@@ -53,6 +60,10 @@ export const replaceNonRecursivePartial = rule(
   }
 )
 
+/**
+ * Replace partial nodes followed by a call with a new lambda node that has all
+ * bound values inlined.
+ */
 export const replaceCallAfterPartial = rule(
   (graph, node) => {
     let matchLambdaOrPartial
@@ -108,6 +119,11 @@ export const replaceCallAfterPartial = rule(
   }
 )
 
+/**
+ * Replace lambda functions that are bound to another lambda function that
+ * is bound to one argument with a new lambda function that combines both
+ * function and is bound to the argument.
+ */
 export const replacePartialPartial = rule(
   match.byIdAndInputs('functional/partial', {
     fn: match.lambda(),

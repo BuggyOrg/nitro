@@ -3,6 +3,14 @@ import * as nodeCreators from '../nodes'
 import { createEdge, setNodeAt } from '../../util/rewrite'
 import _ from 'lodash'
 
+/**
+ * Insert a minimum search algorithm in the given graph that sort the gets the minimum of the list
+ * at the given node and port.
+ * @param graph graphlib graph
+ * @param node node name of the list input
+ * @param port port name of the list input
+ * @returns node name and port of the minimum search output
+ */
 export function minSearch (graph, { node, port }) {
   const context = (graph.node(node).inputPorts || {})[port] ? node : graph.parent(node)
 
@@ -107,7 +115,14 @@ export function minSearch (graph, { node, port }) {
   }
 }
 
-
+/**
+ * Insert a maximum search algorithm in the given graph that sort the gets the maximum of the list
+ * at the given node and port.
+ * @param graph graphlib graph
+ * @param node node name of the list input
+ * @param port port name of the list input
+ * @returns node name and port of the maximum search output
+ */
 export function maxSearch (graph, { node, port }) {
   const context = (graph.node(node).inputPorts || {})[port] ? node : graph.parent(node)
 

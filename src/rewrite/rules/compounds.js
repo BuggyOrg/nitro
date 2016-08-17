@@ -6,12 +6,19 @@ import { realPredecessors } from '../../util/realWalk'
 import { matchTailRecursiveCompound, rewriteTailRecursionToLoop } from './tailrecursion'
 import { matchLinearRecursiveCompound, rewriteLinearRecursionToTailRecursion } from './linearrecursion'
 
+/**
+ * Remove non-recursive compound nodes.
+ */
 export const removeUnnecessaryCompoundNodes = rule(
   isUnnecessaryCompound,
   (graph, node) => unpackCompoundNode(graph, node) ? { node } : false,
   { name: 'remove unnecessary compounds' }
 )
 
+/**
+ * Move predecessors of recursive compounds into the recursive compound node
+ * if they are the same in every recursive call.
+ */
 export const moveInputsIntoRecursiveCompounds = rule(
   (graph, n) => {
     const node = graph.node(n)
@@ -55,11 +62,18 @@ export const moveInputsIntoRecursiveCompounds = rule(
   { name: 'move constant input into recursive compound' }
 )
 
+/**
+ * Replace tail-recursive compounds with tailrec nodes that can be compiled
+ * to loops.
+ */
 export const tailRecursionToLoop = rule(
   matchTailRecursiveCompound,
   rewriteTailRecursionToLoop
 )
 
+/**
+ * Replace some linear-recursive compounds with tail-recursive compounds.
+ */
 export const linearRecursionToTailRecursion = rule(
   matchLinearRecursiveCompound,
   rewriteLinearRecursionToTailRecursion
